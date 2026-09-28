@@ -32,6 +32,7 @@ export default function TambahWargaModal({ isOpen, onClose, onSave }) {
       ...formData,
       id: Date.now(),
       statusIuran: 'Lunas',
+      tanggalDaftar: new Date().toISOString().split('T')[0],
       alamat: `Jl. Melati Blok ${formData.blok} No. ${formData.noRumah || '01'}`
     });
     onClose();

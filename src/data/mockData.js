@@ -33,6 +33,7 @@ export const INITIAL_CITIZENS = [
     telepon: "0812-3456-7890",
     statusIuran: "Lunas",
     peranKeluarga: "Kepala Keluarga",
+    tanggalDaftar: "2026-03-10",
   },
   {
     id: 2,
@@ -52,6 +53,7 @@ export const INITIAL_CITIZENS = [
     telepon: "0813-8899-7711",
     statusIuran: "Lunas",
     peranKeluarga: "Istri",
+    tanggalDaftar: "2026-03-10",
   },
   {
     id: 3,
@@ -71,6 +73,7 @@ export const INITIAL_CITIZENS = [
     telepon: "0856-7123-9900",
     statusIuran: "Lunas",
     peranKeluarga: "Kepala Keluarga",
+    tanggalDaftar: "2026-03-01",
   },
   {
     id: 4,
@@ -90,6 +93,7 @@ export const INITIAL_CITIZENS = [
     telepon: "0819-0821-3322",
     statusIuran: "Lunas",
     peranKeluarga: "Kepala Keluarga",
+    tanggalDaftar: "2026-02-15",
   },
   {
     id: 5,
@@ -109,6 +113,7 @@ export const INITIAL_CITIZENS = [
     telepon: "0812-9988-1122",
     statusIuran: "Belum Lunas",
     peranKeluarga: "Kepala Keluarga",
+    tanggalDaftar: "2026-01-20",
   },
   {
     id: 6,
@@ -128,6 +133,7 @@ export const INITIAL_CITIZENS = [
     telepon: "0877-2233-4455",
     statusIuran: "Lunas",
     peranKeluarga: "Anak",
+    tanggalDaftar: "2026-01-10",
   },
   {
     id: 7,
@@ -147,6 +153,7 @@ export const INITIAL_CITIZENS = [
     telepon: "0896-1234-5678",
     statusIuran: "Lunas",
     peranKeluarga: "Anak",
+    tanggalDaftar: "2025-11-22",
   },
   {
     id: 8,
@@ -166,6 +173,7 @@ export const INITIAL_CITIZENS = [
     telepon: "-",
     statusIuran: "Lunas",
     peranKeluarga: "Kepala Keluarga",
+    tanggalDaftar: "2026-03-20",
   },
   {
     id: 9,
@@ -185,6 +193,7 @@ export const INITIAL_CITIZENS = [
     telepon: "0813-1122-3344",
     statusIuran: "Lunas",
     peranKeluarga: "Kepala Keluarga",
+    tanggalDaftar: "2026-02-18",
   },
   {
     id: 10,
@@ -204,6 +213,7 @@ export const INITIAL_CITIZENS = [
     telepon: "0857-4455-6677",
     statusIuran: "Menunggak (2 bln)",
     peranKeluarga: "Kepala Keluarga",
+    tanggalDaftar: "2025-08-14",
   }
 ];
 
