@@ -1,5 +1,5 @@
-import React from 'react';
-import { X, ChevronDown, ChevronRight, Home, Users, Wallet, FileText, Settings, UserCheck } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { X, ChevronRight, Home, Users, Wallet, FileText, Settings, UserCheck } from 'lucide-react';
 
 export default function SidebarDrawer({ 
   isOpen, 
@@ -9,6 +9,31 @@ export default function SidebarDrawer({
   onSelectMenu, 
   onSelectSubMenu 
 }) {
+  // State dropdown terbuka / tertutup per kategori menu
+  const [openDropdowns, setOpenDropdowns] = useState({
+    warga: false,
+    keuangan: false,
+    surat: false,
+  });
+
+  // Otomatis buka dropdown jika menu tersebut sedang aktif
+  useEffect(() => {
+    if (activeMenu === 'warga' || activeMenu === 'keuangan' || activeMenu === 'surat') {
+      setOpenDropdowns(prev => ({
+        ...prev,
+        [activeMenu]: true
+      }));
+    }
+  }, [activeMenu]);
+
+  // Handler toggle dropdown saat judul diklik
+  const handleToggle = (menuKey) => {
+    setOpenDropdowns(prev => ({
+      ...prev,
+      [menuKey]: !prev[menuKey]
+    }));
+  };
+
   return (
     <>
       {/* Overlay Backdrop */}
@@ -37,7 +62,7 @@ export default function SidebarDrawer({
         </div>
 
         <nav className="sidebar-nav">
-          {/* 1. Dashboard */}
+          {/* 1. Dashboard (Single menu tanpa dropdown) */}
           <div 
             className={`nav-section-title ${activeMenu === 'dashboard' ? 'active' : ''}`}
             onClick={() => {
@@ -51,100 +76,127 @@ export default function SidebarDrawer({
             </div>
           </div>
 
-          {/* 2. Data Warga / Kependudukan */}
+          {/* 2. Data Warga / Kependudukan (Dropdown Accordion) */}
           <div>
             <div 
               className={`nav-section-title ${activeMenu === 'warga' ? 'active' : ''}`}
-              onClick={() => onSelectMenu('warga')}
+              onClick={() => handleToggle('warga')}
+              title="Klik untuk buka / tutup sub-menu Data Warga"
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                 <Users size={18} />
                 <span>Data Warga / Kependudukan</span>
               </div>
-              {activeMenu === 'warga' ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+              <ChevronRight 
+                size={16} 
+                style={{ 
+                  transition: 'transform 0.25s ease',
+                  transform: openDropdowns.warga ? 'rotate(90deg)' : 'rotate(0deg)'
+                }} 
+              />
             </div>
 
-            <ul className="nav-sub-list">
-              <li className={`nav-sub-item ${activeMenu === 'warga' && activeSubMenu === 'master' ? 'active' : ''}`}>
-                <button onClick={() => { onSelectSubMenu('warga', 'master'); onClose(); }}>
-                  • Data Master Penduduk
-                </button>
-              </li>
-              <li className={`nav-sub-item ${activeMenu === 'warga' && activeSubMenu === 'sementara' ? 'active' : ''}`}>
-                <button onClick={() => { onSelectSubMenu('warga', 'sementara'); onClose(); }}>
-                  • Penduduk Sementara / Domisili
-                </button>
-              </li>
-              <li className={`nav-sub-item ${activeMenu === 'warga' && activeSubMenu === 'mutasi' ? 'active' : ''}`}>
-                <button onClick={() => { onSelectSubMenu('warga', 'mutasi'); onClose(); }}>
-                  • Mutasi Kependudukan (Kelahiran, Kematian, Pindah/Datang)
-                </button>
-              </li>
-            </ul>
+            {openDropdowns.warga && (
+              <ul className="nav-sub-list">
+                <li className={`nav-sub-item ${activeMenu === 'warga' && activeSubMenu === 'master' ? 'active' : ''}`}>
+                  <button onClick={() => { onSelectSubMenu('warga', 'master'); onClose(); }}>
+                    • Data Master Penduduk
+                  </button>
+                </li>
+                <li className={`nav-sub-item ${activeMenu === 'warga' && activeSubMenu === 'sementara' ? 'active' : ''}`}>
+                  <button onClick={() => { onSelectSubMenu('warga', 'sementara'); onClose(); }}>
+                    • Penduduk Sementara / Domisili
+                  </button>
+                </li>
+                <li className={`nav-sub-item ${activeMenu === 'warga' && activeSubMenu === 'mutasi' ? 'active' : ''}`}>
+                  <button onClick={() => { onSelectSubMenu('warga', 'mutasi'); onClose(); }}>
+                    • Mutasi Kependudukan (Kelahiran, Kematian, Pindah/Datang)
+                  </button>
+                </li>
+              </ul>
+            )}
           </div>
 
-          {/* 3. Keuangan & Iuran */}
+          {/* 3. Keuangan & Iuran (Dropdown Accordion) */}
           <div>
             <div 
               className={`nav-section-title ${activeMenu === 'keuangan' ? 'active' : ''}`}
-              onClick={() => onSelectMenu('keuangan')}
+              onClick={() => handleToggle('keuangan')}
+              title="Klik untuk buka / tutup sub-menu Keuangan"
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                 <Wallet size={18} />
                 <span>Keuangan & Iuran</span>
               </div>
-              {activeMenu === 'keuangan' ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+              <ChevronRight 
+                size={16} 
+                style={{ 
+                  transition: 'transform 0.25s ease',
+                  transform: openDropdowns.keuangan ? 'rotate(90deg)' : 'rotate(0deg)'
+                }} 
+              />
             </div>
 
-            <ul className="nav-sub-list">
-              <li className={`nav-sub-item ${activeMenu === 'keuangan' && activeSubMenu === 'iuran' ? 'active' : ''}`}>
-                <button onClick={() => { onSelectSubMenu('keuangan', 'iuran'); onClose(); }}>
-                  • Catatan Iuran Warga
-                </button>
-              </li>
-              <li className={`nav-sub-item ${activeMenu === 'keuangan' && activeSubMenu === 'rekap' ? 'active' : ''}`}>
-                <button onClick={() => { onSelectSubMenu('keuangan', 'rekap'); onClose(); }}>
-                  • Rekapitulasi Kas Masuk & Keluar
-                </button>
-              </li>
-              <li className={`nav-sub-item ${activeMenu === 'keuangan' && activeSubMenu === 'laporan' ? 'active' : ''}`}>
-                <button onClick={() => { onSelectSubMenu('keuangan', 'laporan'); onClose(); }}>
-                  • Laporan Keuangan
-                </button>
-              </li>
-            </ul>
+            {openDropdowns.keuangan && (
+              <ul className="nav-sub-list">
+                <li className={`nav-sub-item ${activeMenu === 'keuangan' && activeSubMenu === 'iuran' ? 'active' : ''}`}>
+                  <button onClick={() => { onSelectSubMenu('keuangan', 'iuran'); onClose(); }}>
+                    • Catatan Iuran Warga
+                  </button>
+                </li>
+                <li className={`nav-sub-item ${activeMenu === 'keuangan' && activeSubMenu === 'rekap' ? 'active' : ''}`}>
+                  <button onClick={() => { onSelectSubMenu('keuangan', 'rekap'); onClose(); }}>
+                    • Rekapitulasi Kas Masuk & Keluar
+                  </button>
+                </li>
+                <li className={`nav-sub-item ${activeMenu === 'keuangan' && activeSubMenu === 'laporan' ? 'active' : ''}`}>
+                  <button onClick={() => { onSelectSubMenu('keuangan', 'laporan'); onClose(); }}>
+                    • Laporan Keuangan
+                  </button>
+                </li>
+              </ul>
+            )}
           </div>
 
-          {/* 4. Pelayanan Surat / Administrasi */}
+          {/* 4. Pelayanan Surat / Administrasi (Dropdown Accordion) */}
           <div>
             <div 
               className={`nav-section-title ${activeMenu === 'surat' ? 'active' : ''}`}
-              onClick={() => onSelectMenu('surat')}
+              onClick={() => handleToggle('surat')}
+              title="Klik untuk buka / tutup sub-menu Pelayanan Surat"
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                 <FileText size={18} />
                 <span>Pelayanan Surat / Administrasi</span>
               </div>
-              {activeMenu === 'surat' ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+              <ChevronRight 
+                size={16} 
+                style={{ 
+                  transition: 'transform 0.25s ease',
+                  transform: openDropdowns.surat ? 'rotate(90deg)' : 'rotate(0deg)'
+                }} 
+              />
             </div>
 
-            <ul className="nav-sub-list">
-              <li className={`nav-sub-item ${activeMenu === 'surat' && activeSubMenu === 'masuk' ? 'active' : ''}`}>
-                <button onClick={() => { onSelectSubMenu('surat', 'masuk'); onClose(); }}>
-                  • Permohonan Surat Masuk & Verifikasi
-                </button>
-              </li>
-              <li className={`nav-sub-item ${activeMenu === 'surat' && activeSubMenu === 'buat' ? 'active' : ''}`}>
-                <button onClick={() => { onSelectSubMenu('surat', 'buat'); onClose(); }}>
-                  • Pembuatan & Cetak/Export PDF Surat Otomatis
-                </button>
-              </li>
-              <li className={`nav-sub-item ${activeMenu === 'surat' && activeSubMenu === 'arsip' ? 'active' : ''}`}>
-                <button onClick={() => { onSelectSubMenu('surat', 'arsip'); onClose(); }}>
-                  • Arsip / Riwayat Surat Keluar
-                </button>
-              </li>
-            </ul>
+            {openDropdowns.surat && (
+              <ul className="nav-sub-list">
+                <li className={`nav-sub-item ${activeMenu === 'surat' && activeSubMenu === 'masuk' ? 'active' : ''}`}>
+                  <button onClick={() => { onSelectSubMenu('surat', 'masuk'); onClose(); }}>
+                    • Permohonan Surat Masuk & Verifikasi
+                  </button>
+                </li>
+                <li className={`nav-sub-item ${activeMenu === 'surat' && activeSubMenu === 'buat' ? 'active' : ''}`}>
+                  <button onClick={() => { onSelectSubMenu('surat', 'buat'); onClose(); }}>
+                    • Pembuatan & Cetak/Export PDF Surat Otomatis
+                  </button>
+                </li>
+                <li className={`nav-sub-item ${activeMenu === 'surat' && activeSubMenu === 'arsip' ? 'active' : ''}`}>
+                  <button onClick={() => { onSelectSubMenu('surat', 'arsip'); onClose(); }}>
+                    • Arsip / Riwayat Surat Keluar
+                  </button>
+                </li>
+              </ul>
+            )}
           </div>
 
           {/* 5. Manajemen Pengguna / User Settings */}
