@@ -12,7 +12,8 @@ export default function DashboardView({
   transactions, 
   onNavigate, 
   onOpenSuratModal,
-  onApproveSurat 
+  onApproveSurat,
+  currentUserRole = 'Ketua RT'
 }) {
   const pendingSurat = suratList.filter(s => s.status === 'Menunggu Verifikasi');
   const totalKasMasuk = transactions.filter(t => t.kategori === 'Pemasukan').reduce((acc, curr) => acc + curr.nominal, 0);
@@ -457,7 +458,7 @@ export default function DashboardView({
                   >
                     <Printer size={15} /> Pratinjau Surat
                   </button>
-                  {srt.status === 'Menunggu Verifikasi' && (
+                  {currentUserRole !== 'Bendahara' && srt.status === 'Menunggu Verifikasi' && (
                     <button 
                       onClick={() => onApproveSurat(srt.id)}
                       style={{

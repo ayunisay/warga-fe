@@ -10,7 +10,8 @@ export default function SuratView({
   onSelectSubMenu, 
   onOpenSuratModal,
   onApproveSurat,
-  onAddSurat 
+  onAddSurat,
+  currentUserRole = 'Ketua RT'
 }) {
   const [searchTerm, setSearchTerm] = useState('');
   const [showAddSuratModal, setShowAddSuratModal] = useState(false);
@@ -22,6 +23,9 @@ export default function SuratView({
     tujuan: '',
     urgensi: 'Biasa'
   });
+
+  const isBendahara = currentUserRole === 'Bendahara';
+  const canPengajuanSurat = !isBendahara;
 
   const filteredSurat = suratList.filter(s => {
     if (activeSubMenu === 'masuk' && s.status !== 'Menunggu Verifikasi') {
@@ -39,6 +43,10 @@ export default function SuratView({
 
   const handleCreateSurat = (e) => {
     e.preventDefault();
+    if (!canPengajuanSurat) {
+      alert('Akses Ditolak: Bendahara tidak memiliki akses untuk pengajuan surat.');
+      return;
+    }
     if (!formData.pemohon || !formData.nik || !formData.tujuan) {
       alert('Semua kolom wajib diisi!');
       return;
@@ -55,7 +63,7 @@ export default function SuratView({
       tanggalPengajuan: new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }),
       status: 'Menunggu Verifikasi',
       urgensi: formData.urgensi,
-      catatan: 'Permohonan mandiri warga baru saja diajukan.'
+      catatan: 'Permohonan surat baru saja diajukan.'
     };
 
     onAddSurat(newSurat);
@@ -72,6 +80,26 @@ export default function SuratView({
 
   return (
     <div className="surat-page">
+      {/* Notice jika login sebagai Bendahara */}
+      {isBendahara && (
+        <div style={{
+          background: '#fffbeb',
+          border: '1px solid #fde68a',
+          borderRadius: '12px',
+          padding: '12px 18px',
+          marginBottom: '18px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '12px',
+          color: '#92400e'
+        }}>
+          <AlertCircle size={20} color="#d97706" />
+          <div style={{ fontSize: '13px' }}>
+            <strong>Akses Dibatasi (Role Bendahara):</strong> Bendahara tidak diberikan akses untuk pengajuan, pembuatan, atau persetujuan surat pengantar warga. Layanan administrasi surat dikelola penuh oleh <strong>Ketua RT</strong> dan <strong>Sekretaris</strong>.
+          </div>
+        </div>
+      )}
+
       {/* Submenu Tabs & Action Header */}
       <div style={{
         display: 'flex',
@@ -123,23 +151,38 @@ export default function SuratView({
           </button>
         </div>
 
-        <button 
-          onClick={() => setShowAddSuratModal(true)}
-          style={{
-            background: '#3B7594',
-            color: '#ffffff',
-            padding: '10px 18px',
-            borderRadius: '10px',
-            fontSize: '13px',
+        {/* Tombol Buat Surat hanya tampil untuk Ketua RT dan Sekretaris (Bukan Bendahara) */}
+        {canPengajuanSurat ? (
+          <button 
+            onClick={() => setShowAddSuratModal(true)}
+            style={{
+              background: '#3B7594',
+              color: '#ffffff',
+              padding: '10px 18px',
+              borderRadius: '10px',
+              fontSize: '13px',
+              fontWeight: 700,
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              boxShadow: '0 4px 12px rgba(59, 117, 148, 0.3)'
+            }}
+          >
+            <Plus size={18} /> Buat Permohonan Surat Baru
+          </button>
+        ) : (
+          <div style={{
+            fontSize: '12px',
+            color: '#dc2626',
+            background: '#fee2e2',
+            padding: '8px 14px',
+            borderRadius: '8px',
             fontWeight: 700,
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            boxShadow: '0 4px 12px rgba(59, 117, 148, 0.3)'
-          }}
-        >
-          <Plus size={18} /> Buat Permohonan Surat Baru
-        </button>
+            border: '1px solid #fca5a5'
+          }}>
+            ✕ Akses Pengajuan Surat Tidak Tersedia untuk Bendahara
+          </div>
+        )}
       </div>
 
       {/* Search Bar */}
@@ -233,7 +276,7 @@ export default function SuratView({
                   <Printer size={15} /> Cetak & Pratinjau
                 </button>
 
-                {srt.status === 'Menunggu Verifikasi' && (
+                {canPengajuanSurat && srt.status === 'Menunggu Verifikasi' && (
                   <button 
                     onClick={() => onApproveSurat(srt.id)}
                     style={{

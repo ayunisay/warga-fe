@@ -150,6 +150,7 @@ export default function App() {
               onNavigate={handleSelectSubMenu}
               onOpenSuratModal={(surat) => setSelectedSuratForPrint(surat)}
               onApproveSurat={handleApproveSurat}
+              currentUserRole={currentUserRole}
             />
           )}
 
@@ -182,6 +183,7 @@ export default function App() {
               onOpenSuratModal={(surat) => setSelectedSuratForPrint(surat)}
               onApproveSurat={handleApproveSurat}
               onAddSurat={handleAddSurat}
+              currentUserRole={currentUserRole}
             />
           )}
 

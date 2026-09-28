@@ -435,7 +435,7 @@ export default function SettingsView({
                   </td>
                   <td style={{ textAlign: 'center', color: '#64748b' }}>Lihat Data</td>
                   <td style={{ textAlign: 'center', color: '#16a34a', fontWeight: 700 }}>Kelola Kas & Iuran</td>
-                  <td style={{ textAlign: 'center', color: '#94a3b8' }}>-</td>
+                  <td style={{ textAlign: 'center', color: '#dc2626', fontWeight: 700 }}>✕ Tidak Ada Akses</td>
                   <td style={{ textAlign: 'center', color: '#dc2626' }}>✕ Tidak Bisa</td>
                 </tr>
               </tbody>
