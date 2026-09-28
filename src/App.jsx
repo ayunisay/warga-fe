@@ -10,7 +10,6 @@ import SettingsView from './components/views/SettingsView';
 import SuratPrintModal from './components/modals/SuratPrintModal';
 import TambahWargaModal from './components/modals/TambahWargaModal';
 import { INITIAL_CITIZENS, INITIAL_SURAT, INITIAL_TRANSACTIONS } from './data/mockData';
-import { Menu } from 'lucide-react';
 import './index.css';
 
 export default function App() {
@@ -101,18 +100,7 @@ export default function App() {
 
   return (
     <div className="app-container">
-      {/* 1. Left Accent Strip (matches the wireframe leftmost vertical blue bar) */}
-      <div className="left-accent-strip">
-        <button 
-          className="hamburger-btn-strip"
-          onClick={() => setIsSidebarOpen(true)}
-          title="Buka Navigasi Menu"
-        >
-          <Menu size={24} strokeWidth={2.4} />
-        </button>
-      </div>
-
-      {/* 2. Slide-out Navigation Drawer (Image 2) */}
+      {/* 1. Slide-out Navigation Drawer (Image 2) */}
       <SidebarDrawer 
         isOpen={isSidebarOpen}
         onClose={() => setIsSidebarOpen(false)}
