@@ -9,7 +9,7 @@ import SuratView from './components/views/SuratView';
 import SettingsView from './components/views/SettingsView';
 import SuratPrintModal from './components/modals/SuratPrintModal';
 import TambahWargaModal from './components/modals/TambahWargaModal';
-import { INITIAL_CITIZENS, INITIAL_SURAT, INITIAL_TRANSACTIONS } from './data/mockData';
+import { INITIAL_CITIZENS, INITIAL_SURAT, INITIAL_TRANSACTIONS, INITIAL_USERS } from './data/mockData';
 import './index.css';
 
 export default function App() {
@@ -21,6 +21,8 @@ export default function App() {
   const [citizens, setCitizens] = useState(INITIAL_CITIZENS);
   const [suratList, setSuratList] = useState(INITIAL_SURAT);
   const [transactions, setTransactions] = useState(INITIAL_TRANSACTIONS);
+  const [users, setUsers] = useState(INITIAL_USERS);
+  const [currentUserRole, setCurrentUserRole] = useState('Ketua RT (Superadmin)');
   
   // Modals
   const [selectedSuratForPrint, setSelectedSuratForPrint] = useState(null);
@@ -98,6 +100,25 @@ export default function App() {
     setSuratList(prev => [newSurat, ...prev]);
   };
 
+  const handleUpdateUser = (userId, updatedData) => {
+    setUsers(prev => prev.map(u => {
+      if (u.id === userId) {
+        return { ...u, ...updatedData };
+      }
+      return u;
+    }));
+  };
+
+  const handleAddUser = (newUser) => {
+    setUsers(prev => [...prev, newUser]);
+  };
+
+  const handleDeleteUser = (userId) => {
+    if (window.confirm('Yakin ingin menghapus pengguna ini?')) {
+      setUsers(prev => prev.filter(u => u.id !== userId));
+    }
+  };
+
   return (
     <div className="app-container">
       {/* 1. Slide-out Navigation Drawer (Image 2) */}
@@ -116,6 +137,7 @@ export default function App() {
         <Header 
           title={getPageTitle()}
           onToggleSidebar={() => setIsSidebarOpen(true)}
+          currentUserRole={currentUserRole}
         />
 
         {/* Page Content based on active navigation */}
@@ -164,7 +186,14 @@ export default function App() {
           )}
 
           {activeMenu === 'settings' && (
-            <SettingsView />
+            <SettingsView 
+              users={users}
+              currentUserRole={currentUserRole}
+              onChangeCurrentRole={setCurrentUserRole}
+              onUpdateUser={handleUpdateUser}
+              onAddUser={handleAddUser}
+              onDeleteUser={handleDeleteUser}
+            />
           )}
         </div>
 

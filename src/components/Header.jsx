@@ -1,7 +1,16 @@
 import React from 'react';
 import { Menu, Bell, ShieldCheck } from 'lucide-react';
 
-export default function Header({ title, onToggleSidebar, activeRole = "Ketua RT" }) {
+export default function Header({ title, onToggleSidebar, currentUserRole = "Ketua RT (Superadmin)" }) {
+  const getGreeting = () => {
+    if (currentUserRole.includes('Ketua')) return { name: 'Hi, Ketua', initial: 'KT', color: '#3B7594' };
+    if (currentUserRole.includes('Sekretaris')) return { name: 'Hi, Sekretaris', initial: 'SK', color: '#0284c7' };
+    if (currentUserRole.includes('Bendahara')) return { name: 'Hi, Bendahara', initial: 'BD', color: '#059669' };
+    return { name: 'Hi, Warga', initial: 'WG', color: '#64748b' };
+  };
+
+  const user = getGreeting();
+
   return (
     <header className="top-header">
       <div className="header-left">
@@ -29,12 +38,16 @@ export default function Header({ title, onToggleSidebar, activeRole = "Ketua RT"
       </div>
 
       <div className="header-right">
-        <span className="user-greeting">Hi, Ketua</span>
+        <div style={{ textAlign: 'right' }}>
+          <div className="user-greeting">{user.name}</div>
+          <div style={{ fontSize: '11px', color: '#64748b', fontWeight: 600 }}>{currentUserRole.split(' ')[0]}</div>
+        </div>
         <div 
           className="user-avatar-circle" 
-          title="Profil Pengguna - Ketua RT 007"
+          title={`Profil Pengguna - ${currentUserRole}`}
+          style={{ background: user.color }}
         >
-          <span style={{ fontSize: '15px', fontWeight: 800 }}>KT</span>
+          <span style={{ fontSize: '15px', fontWeight: 800 }}>{user.initial}</span>
         </div>
       </div>
     </header>

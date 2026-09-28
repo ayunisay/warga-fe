@@ -385,3 +385,57 @@ export const DEMOGRAFI_DATA = {
   blokC: 118,
   blokD: 108,
 };
+
+export const INITIAL_USERS = [
+  {
+    id: 1,
+    nama: "H. Bambang Sugiarto, S.T.",
+    jabatan: "Ketua RT 007",
+    role: "Ketua RT (Superadmin)",
+    email: "ketua.rt007@gmail.com",
+    telp: "0812-3456-7890",
+    status: "Aktif",
+    avatarInitial: "KT",
+  },
+  {
+    id: 2,
+    nama: "Ahmad Fauzi",
+    jabatan: "Sekretaris",
+    role: "Sekretaris (Administrator)",
+    email: "sekretaris.rt007@gmail.com",
+    telp: "0813-8899-7711",
+    status: "Aktif",
+    avatarInitial: "AF",
+  },
+  {
+    id: 3,
+    nama: "Hj. Endang Suryaningsih",
+    jabatan: "Bendahara",
+    role: "Bendahara (Keuangan)",
+    email: "bendahara.rt007@gmail.com",
+    telp: "0856-7123-9900",
+    status: "Aktif",
+    avatarInitial: "ES",
+  },
+  {
+    id: 4,
+    nama: "Wawan Kurniawan",
+    jabatan: "Koordinator Keamanan",
+    role: "Petugas Lapangan",
+    email: "keamanan.rt007@gmail.com",
+    telp: "0819-0821-3322",
+    status: "Aktif",
+    avatarInitial: "WK",
+  },
+  {
+    id: 5,
+    nama: "Siti Rahmawati",
+    jabatan: "Warga / Sie Konsumsi",
+    role: "Warga",
+    email: "siti.rahmawati@gmail.com",
+    telp: "0819-0821-3322",
+    status: "Aktif",
+    avatarInitial: "SR",
+  }
+];
+
