@@ -22,7 +22,7 @@ export default function App() {
   const [suratList, setSuratList] = useState(INITIAL_SURAT);
   const [transactions, setTransactions] = useState(INITIAL_TRANSACTIONS);
   const [users, setUsers] = useState(INITIAL_USERS);
-  const [currentUserRole, setCurrentUserRole] = useState('Ketua RT (Superadmin)');
+  const [currentUserRole, setCurrentUserRole] = useState('Ketua RT');
   
   // Modals
   const [selectedSuratForPrint, setSelectedSuratForPrint] = useState(null);

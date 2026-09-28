@@ -18,7 +18,7 @@ export default function SettingsView({
   const [showAddModal, setShowAddModal] = useState(false);
 
   // Cek apakah peran saat ini berhak mengedit user & role (Hanya Ketua RT & Sekretaris)
-  const isAuthorized = currentUserRole === 'Ketua RT (Superadmin)' || currentUserRole === 'Sekretaris (Administrator)';
+  const isAuthorized = currentUserRole === 'Ketua RT' || currentUserRole === 'Sekretaris';
 
   // Form state untuk Edit User
   const [editForm, setEditForm] = useState({
@@ -34,7 +34,7 @@ export default function SettingsView({
   const [newUserForm, setNewUserForm] = useState({
     nama: '',
     jabatan: '',
-    role: 'Petugas Lapangan',
+    role: 'Bendahara',
     email: '',
     telp: '',
     status: 'Aktif'
@@ -82,7 +82,7 @@ export default function SettingsView({
     setNewUserForm({
       nama: '',
       jabatan: '',
-      role: 'Petugas Lapangan',
+      role: 'Bendahara',
       email: '',
       telp: '',
       status: 'Aktif'
@@ -90,10 +90,9 @@ export default function SettingsView({
   };
 
   const availableRoles = [
-    { value: 'Ketua RT (Superadmin)', desc: 'Akses penuh seluruh modul (Kependudukan, Keuangan, Surat, Pengguna)' },
-    { value: 'Sekretaris (Administrator)', desc: 'Kelola Surat Pengantar, Data Warga, & Edit Role Pengguna' },
-    { value: 'Bendahara (Keuangan)', desc: 'Kelola Kas Masuk, Kas Keluar, & Status Iuran Warga' },
-    { value: 'Petugas Lapangan', desc: 'Monitoring Jadwal Ronda, Keamanan, & Sarana Prasarana' },
+    { value: 'Ketua RT', desc: 'Akses penuh seluruh modul (Kependudukan, Keuangan, Surat, Pengguna & Role)' },
+    { value: 'Sekretaris', desc: 'Kelola Surat Pengantar, Data Warga, & Edit Role Pengguna' },
+    { value: 'Bendahara', desc: 'Kelola Kas Masuk, Kas Keluar, & Status Iuran Warga' },
   ];
 
   return (
@@ -150,10 +149,9 @@ export default function SettingsView({
               cursor: 'pointer'
             }}
           >
-            <option value="Ketua RT (Superadmin)">Ketua RT (Superadmin) - Punya Akses Edit</option>
-            <option value="Sekretaris (Administrator)">Sekretaris (Administrator) - Punya Akses Edit</option>
-            <option value="Bendahara (Keuangan)">Bendahara (Keuangan) - Tanpa Akses Edit User</option>
-            <option value="Petugas Lapangan">Petugas Lapangan - Tanpa Akses Edit User</option>
+            <option value="Ketua RT">Ketua RT (Punya Akses Edit User & Role)</option>
+            <option value="Sekretaris">Sekretaris (Punya Akses Edit User & Role)</option>
+            <option value="Bendahara">Bendahara (Tanpa Akses Edit User & Role)</option>
           </select>
         </div>
       </div>
@@ -361,7 +359,7 @@ export default function SettingsView({
                     <Edit3 size={15} /> Edit User & Role
                   </button>
 
-                  {isAuthorized && u.role !== 'Ketua RT (Superadmin)' && (
+                  {isAuthorized && u.role !== 'Ketua RT' && (
                     <button 
                       onClick={() => onDeleteUser(u.id)}
                       style={{
@@ -415,7 +413,7 @@ export default function SettingsView({
               <tbody>
                 <tr style={{ borderBottom: '1px solid #f1f5f9' }}>
                   <td style={{ padding: '12px 16px', fontWeight: 800, color: '#92400e' }}>
-                    Ketua RT (Superadmin)
+                    Ketua RT
                   </td>
                   <td style={{ textAlign: 'center', color: '#16a34a', fontWeight: 700 }}>Akses Penuh</td>
                   <td style={{ textAlign: 'center', color: '#16a34a', fontWeight: 700 }}>Akses Penuh</td>
@@ -424,24 +422,19 @@ export default function SettingsView({
                 </tr>
                 <tr style={{ borderBottom: '1px solid #f1f5f9' }}>
                   <td style={{ padding: '12px 16px', fontWeight: 800, color: '#0369a1' }}>
-                    Sekretaris (Administrator)
+                    Sekretaris
                   </td>
                   <td style={{ textAlign: 'center', color: '#16a34a', fontWeight: 700 }}>Akses Penuh</td>
                   <td style={{ textAlign: 'center', color: '#64748b' }}>Lihat Laporan</td>
                   <td style={{ textAlign: 'center', color: '#16a34a', fontWeight: 700 }}>Buat & Cetak</td>
                   <td style={{ textAlign: 'center', background: '#fef9c3', color: '#15803d', fontWeight: 800 }}>✓ BISA EDIT ROLE</td>
                 </tr>
-                <tr style={{ borderBottom: '1px solid #f1f5f9' }}>
-                  <td style={{ padding: '12px 16px', fontWeight: 700 }}>Bendahara (Keuangan)</td>
+                <tr>
+                  <td style={{ padding: '12px 16px', fontWeight: 700, color: '#15803d' }}>
+                    Bendahara
+                  </td>
                   <td style={{ textAlign: 'center', color: '#64748b' }}>Lihat Data</td>
                   <td style={{ textAlign: 'center', color: '#16a34a', fontWeight: 700 }}>Kelola Kas & Iuran</td>
-                  <td style={{ textAlign: 'center', color: '#94a3b8' }}>-</td>
-                  <td style={{ textAlign: 'center', color: '#dc2626' }}>✕ Tidak Bisa</td>
-                </tr>
-                <tr>
-                  <td style={{ padding: '12px 16px', fontWeight: 700 }}>Petugas Lapangan</td>
-                  <td style={{ textAlign: 'center', color: '#64748b' }}>Lihat Alamat</td>
-                  <td style={{ textAlign: 'center', color: '#94a3b8' }}>-</td>
                   <td style={{ textAlign: 'center', color: '#94a3b8' }}>-</td>
                   <td style={{ textAlign: 'center', color: '#dc2626' }}>✕ Tidak Bisa</td>
                 </tr>
