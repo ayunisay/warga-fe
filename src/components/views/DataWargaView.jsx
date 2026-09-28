@@ -28,7 +28,6 @@ export default function DataWargaView({
   onDeleteCitizen 
 }) {
   const [searchTerm, setSearchTerm] = useState('');
-  const [filterBlok, setFilterBlok] = useState('Semua');
   const [filterBulan, setFilterBulan] = useState('Semua');
   const [filterTahun, setFilterTahun] = useState('Semua');
   const [selectedCitizen, setSelectedCitizen] = useState(null);
@@ -41,25 +40,19 @@ export default function DataWargaView({
 
   const handleResetFilters = () => {
     setSearchTerm('');
-    setFilterBlok('Semua');
     setFilterBulan('Semua');
     setFilterTahun('Semua');
   };
 
-  const isFilterActive = searchTerm !== '' || filterBlok !== 'Semua' || filterBulan !== 'Semua' || filterTahun !== 'Semua';
+  const isFilterActive = searchTerm !== '' || filterBulan !== 'Semua' || filterTahun !== 'Semua';
 
-  // Filter logic based on submenu, blok, month, year, and search
+  // Filter logic based on submenu, month, year, and search
   const filteredCitizens = citizens.filter((citizen) => {
     // 1. Submenu filter
     if (activeSubMenu === 'sementara' && citizen.statusTinggal !== 'Sementara / Kontrak') {
       return false;
     }
     if (activeSubMenu === 'mutasi' && !citizen.statusTinggal.includes('Mutasi')) {
-      return false;
-    }
-
-    // 2. Blok filter
-    if (filterBlok !== 'Semua' && citizen.blok !== filterBlok) {
       return false;
     }
 
@@ -244,34 +237,6 @@ export default function DataWargaView({
                 fontSize: '13.5px'
               }}
             />
-          </div>
-
-          {/* Filter Blok */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <Filter size={16} color="#64748b" />
-            <select 
-              value={filterBlok}
-              onChange={(e) => setFilterBlok(e.target.value)}
-              style={{
-                padding: '9px 12px',
-                borderRadius: '8px',
-                border: '1px solid #cbd5e1',
-                fontSize: '13px',
-                background: '#ffffff',
-                color: '#334155',
-                fontWeight: 600
-              }}
-            >
-              <option value="Semua">Semua Blok</option>
-              <option value="A1">Blok A1</option>
-              <option value="A2">Blok A2</option>
-              <option value="B1">Blok B1</option>
-              <option value="B2">Blok B2</option>
-              <option value="C1">Blok C1</option>
-              <option value="C3">Blok C3</option>
-              <option value="D1">Blok D1</option>
-              <option value="D2">Blok D2</option>
-            </select>
           </div>
 
           {/* Filter Per-Bulan */}
