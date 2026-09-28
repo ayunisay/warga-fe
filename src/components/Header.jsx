@@ -44,8 +44,7 @@ export default function Header({ title, onToggleSidebar, currentUserRole = "Ketu
         </div>
         <div 
           className="user-avatar-circle" 
-          title={`Profil Pengguna - ${currentUserRole}`}
-          style={{ background: user.color }}
+          style={{ background: user.color, pointerEvents: 'none' }}
         >
           <span style={{ fontSize: '15px', fontWeight: 800 }}>{user.initial}</span>
         </div>

@@ -182,14 +182,9 @@ input, select, textarea {
   justify-content: center;
   font-weight: 700;
   font-size: 16px;
-  box-shadow: 0 2px 6px rgba(59, 117, 148, 0.35);
-  cursor: pointer;
-  transition: transform 0.2s, box-shadow 0.2s;
-}
-
-.user-avatar-circle:hover {
-  transform: scale(1.05);
-  box-shadow: 0 4px 12px rgba(59, 117, 148, 0.45);
+  box-shadow: 0 2px 6px rgba(59, 117, 148, 0.25);
+  cursor: default;
+  user-select: none;
 }
 
 /* Page Body */
