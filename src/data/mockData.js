@@ -429,3 +429,47 @@ export const INITIAL_USERS = [
   }
 ];
 
+export const INITIAL_ANNOUNCEMENTS = [
+  {
+    id: 1,
+    judul: "Kerja Bakti Saluran Drainase & Fogging",
+    kategori: "Kegiatan Lingkungan",
+    tanggal: "29 Mar 2026",
+    waktu: "07.30 WIB - Selesai",
+    lokasi: "Lapangan & Saluran RT 007",
+    icon: "🧹",
+    color: "#3B7594",
+    deskripsi: "Seluruh warga dimohon partisipasinya membersihkan got dan lingkungan menjelang musim hujan. Titik kumpul di Lapangan RT 007 pukul 07.30 WIB.",
+    status: "Aktif",
+    prioritas: "Penting",
+    penulis: "Ketua RT 007"
+  },
+  {
+    id: 2,
+    judul: "Posyandu Balita & Imunisasi Melati 07",
+    kategori: "Kesehatan / Posyandu",
+    tanggal: "05 Apr 2026",
+    waktu: "08.30 - 11.30 WIB",
+    lokasi: "Balai Pos RT 007",
+    icon: "👶",
+    color: "#16a34a",
+    deskripsi: "Pemeriksaan tumbuh kembang balita, vitamin A, dan konsultasi gizi balita gratis di Balai Pos RT 007 pukul 08.30 - 11.30 WIB.",
+    status: "Aktif",
+    prioritas: "Rutin",
+    penulis: "Kader Posyandu / Sekretariat"
+  },
+  {
+    id: 3,
+    judul: "Jadwal Pengambilan Sampah Domestik",
+    kategori: "Layanan Kebersihan",
+    tanggal: "Rutin",
+    waktu: "Pagi hari (06.30 - 09.00 WIB)",
+    lokasi: "Depan pagar rumah masing-masing",
+    icon: "🚛",
+    color: "#f59e0b",
+    deskripsi: "Petugas kebersihan mengambil sampah setiap hari Selasa, Kamis, dan Sabtu pagi. Harap meletakkan sampah dalam kantong tertutup di depan pagar.",
+    status: "Aktif",
+    prioritas: "Informasi Rutin",
+    penulis: "Seksi Kebersihan"
+  }
+];

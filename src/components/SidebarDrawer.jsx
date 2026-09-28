@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, ChevronRight, Home, Users, Wallet, FileText, Settings, UserCheck } from 'lucide-react';
+import { X, ChevronRight, Home, Users, Wallet, FileText, Settings, UserCheck, Bell, LogOut } from 'lucide-react';
 
 export default function SidebarDrawer({ 
   isOpen, 
@@ -204,7 +204,21 @@ export default function SidebarDrawer({
             </div>
           )}
 
-          {/* 5. Manajemen Pengguna / User Settings */}
+          {/* 5. Papan Informasi & Pengumuman Warga */}
+          <div 
+            className={`nav-section-title ${activeMenu === 'informasi' ? 'active' : ''}`}
+            onClick={() => {
+              onSelectMenu('informasi');
+              onClose();
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <Bell size={18} />
+              <span>Papan Informasi & Pengumuman</span>
+            </div>
+          </div>
+
+          {/* 6. Manajemen Pengguna / User Settings */}
           <div 
             className={`nav-section-title ${activeMenu === 'settings' ? 'active' : ''}`}
             onClick={() => {
@@ -219,35 +233,43 @@ export default function SidebarDrawer({
           </div>
         </nav>
 
-        {/* User Footer Profile */}
-        <div className="sidebar-user-footer" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <div className="user-avatar-circle" style={{ width: '38px', height: '38px', background: '#2c5c75' }}>
-              <UserCheck size={18} />
-            </div>
-            <div className="info">
-              <h4 style={{ fontSize: '13.5px', margin: 0 }}>{currentUserName}</h4>
-              <p style={{ fontSize: '11px', margin: 0 }}>{currentUserRole} RT 007</p>
-            </div>
-          </div>
-          {onLogout && (
+        {/* Tombol Keluar di atas dan di luar kotak profil footer */}
+        {onLogout && (
+          <div style={{ padding: '0 16px 12px' }}>
             <button
               onClick={() => { onClose(); onLogout(); }}
               title="Keluar"
               style={{
+                width: '100%',
                 background: '#fee2e2',
                 color: '#dc2626',
-                padding: '6px 10px',
-                borderRadius: '6px',
-                fontSize: '11px',
+                padding: '8px 12px',
+                borderRadius: '8px',
+                fontSize: '12px',
                 fontWeight: 700,
                 border: '1px solid #fecaca',
-                cursor: 'pointer'
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '6px',
+                transition: 'all 0.2s'
               }}
             >
-              Keluar
+              <LogOut size={14} /> Keluar
             </button>
-          )}
+          </div>
+        )}
+
+        {/* User Footer Profile (Kotak Biru Tua) */}
+        <div className="sidebar-user-footer">
+          <div className="user-avatar-circle" style={{ width: '38px', height: '38px', background: '#2c5c75' }}>
+            <UserCheck size={18} />
+          </div>
+          <div className="info">
+            <h4 style={{ fontSize: '13.5px', margin: 0 }}>{currentUserName}</h4>
+            <p style={{ fontSize: '11px', margin: 0 }}>{currentUserRole} RT 007</p>
+          </div>
         </div>
       </aside>
     </>

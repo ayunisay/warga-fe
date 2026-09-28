@@ -7,11 +7,12 @@ import DataWargaView from './components/views/DataWargaView';
 import KeuanganView from './components/views/KeuanganView';
 import SuratView from './components/views/SuratView';
 import SettingsView from './components/views/SettingsView';
+import InformasiView from './components/views/InformasiView';
 import WargaPortalView from './components/views/WargaPortalView';
 import LoginPage from './components/auth/LoginPage';
 import SuratPrintModal from './components/modals/SuratPrintModal';
 import TambahWargaModal from './components/modals/TambahWargaModal';
-import { INITIAL_CITIZENS, INITIAL_SURAT, INITIAL_TRANSACTIONS, INITIAL_USERS } from './data/mockData';
+import { INITIAL_CITIZENS, INITIAL_SURAT, INITIAL_TRANSACTIONS, INITIAL_USERS, INITIAL_ANNOUNCEMENTS } from './data/mockData';
 import './index.css';
 
 export default function App() {
@@ -27,6 +28,7 @@ export default function App() {
   const [suratList, setSuratList] = useState(INITIAL_SURAT);
   const [transactions, setTransactions] = useState(INITIAL_TRANSACTIONS);
   const [users, setUsers] = useState(INITIAL_USERS);
+  const [announcements, setAnnouncements] = useState(INITIAL_ANNOUNCEMENTS);
   const [currentUserRole, setCurrentUserRole] = useState('Ketua RT');
 
   // Sinkronisasi currentUserRole dengan currentUser
@@ -58,6 +60,8 @@ export default function App() {
         return 'KEUANGAN & IURAN';
       case 'surat':
         return 'PERMOHONAN SURAT';
+      case 'informasi':
+        return 'PAPAN INFORMASI & AGENDA RT';
       case 'settings':
         return 'MANAJEMEN PENGGUNA';
       default:
@@ -168,6 +172,27 @@ export default function App() {
     setTransactions(prev => [newTrx, ...prev]);
   };
 
+  const handleAddAnnouncement = (newAnn) => {
+    setAnnouncements(prev => [newAnn, ...prev]);
+  };
+
+  const handleUpdateAnnouncement = (id, updatedData) => {
+    setAnnouncements(prev => prev.map(a => a.id === id ? { ...a, ...updatedData } : a));
+  };
+
+  const handleDeleteAnnouncement = (id) => {
+    setAnnouncements(prev => prev.filter(a => a.id !== id));
+  };
+
+  const handleToggleAnnouncement = (id) => {
+    setAnnouncements(prev => prev.map(a => {
+      if (a.id === id) {
+        return { ...a, status: a.status === 'Aktif' ? 'Draft' : 'Aktif' };
+      }
+      return a;
+    }));
+  };
+
   // Jika belum login, tampilkan Halaman Login
   if (!currentUser) {
     return (
@@ -187,6 +212,7 @@ export default function App() {
         <WargaPortalView 
           citizen={currentUser}
           suratList={suratList}
+          announcements={announcements}
           onAddSurat={handleAddSurat}
           onOpenSuratModal={(surat) => setSelectedSuratForPrint(surat)}
           onPayIuran={handleCitizenPayIuran}
@@ -273,6 +299,17 @@ export default function App() {
               onOpenSuratModal={(surat) => setSelectedSuratForPrint(surat)}
               onApproveSurat={handleApproveSurat}
               onAddSurat={handleAddSurat}
+              currentUserRole={currentUserRole}
+            />
+          )}
+
+          {activeMenu === 'informasi' && (
+            <InformasiView 
+              announcements={announcements}
+              onAddAnnouncement={handleAddAnnouncement}
+              onUpdateAnnouncement={handleUpdateAnnouncement}
+              onDeleteAnnouncement={handleDeleteAnnouncement}
+              onToggleAnnouncement={handleToggleAnnouncement}
               currentUserRole={currentUserRole}
             />
           )}
