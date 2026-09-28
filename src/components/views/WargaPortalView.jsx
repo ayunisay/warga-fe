@@ -12,6 +12,7 @@ export default function WargaPortalView({
   citizen = {}, 
   suratList = [], 
   announcements = [],
+  transferVerifications = [],
   onAddSurat, 
   onOpenSuratModal,
   onPayIuran,
@@ -152,7 +153,15 @@ export default function WargaPortalView({
     }
 
     if (onPayIuran) {
-      onPayIuran(citizen?.id, amountToPay, citizen?.nama);
+      onPayIuran(citizen?.id, amountToPay, citizen?.nama, {
+        metode: selectedPaymentMethod,
+        periode: periodeToDisplay,
+        bank: selectedBank,
+        blok: citizen?.blok || 'B2',
+        noRumah: citizen?.noRumah || '14',
+        buktiTransfer: transferProof || (selectedPaymentMethod === 'transfer' ? 'struk_transfer_warga.jpg' : null),
+        catatan: selectedPaymentMethod === 'transfer' ? `Transfer via Bank ${selectedBank === 'mandiri' ? 'Mandiri' : 'BCA'}` : 'Pembayaran mandiri'
+      });
     }
     setShowPaymentModal(false);
     setPaymentSuccessReceipt(receiptData);
@@ -805,8 +814,16 @@ export default function WargaPortalView({
                           borderRadius: '6px',
                           fontSize: '11px',
                           fontWeight: 700,
-                          background: srt.status === 'Menunggu Verifikasi' ? '#fef3c7' : '#dcfce7',
-                          color: srt.status === 'Menunggu Verifikasi' ? '#b45309' : '#15803d'
+                          background: srt.status === 'Menunggu Verifikasi' 
+                            ? '#fef3c7' 
+                            : srt.status === 'Ditolak'
+                              ? '#fee2e2'
+                              : '#dcfce7',
+                          color: srt.status === 'Menunggu Verifikasi' 
+                            ? '#b45309' 
+                            : srt.status === 'Ditolak'
+                              ? '#dc2626'
+                              : '#15803d'
                         }}>
                           {srt.status}
                         </span>
@@ -825,9 +842,32 @@ export default function WargaPortalView({
                       <p style={{ fontSize: '13px', color: '#475569', margin: '4px 0 0' }}>
                         <strong>Keperluan:</strong> {srt.tujuan}
                       </p>
+
+                      {srt.status === 'Ditolak' && (
+                        <div style={{
+                          marginTop: '10px',
+                          background: '#fef2f2',
+                          border: '1px solid #fecaca',
+                          borderRadius: '8px',
+                          padding: '10px 14px',
+                          display: 'flex',
+                          alignItems: 'flex-start',
+                          gap: '8px'
+                        }}>
+                          <AlertCircle size={16} color="#dc2626" style={{ marginTop: '2px', flexShrink: 0 }} />
+                          <div>
+                            <div style={{ fontSize: '12px', fontWeight: 800, color: '#991b1b' }}>
+                              Permohonan Ditolak oleh Pengurus RT:
+                            </div>
+                            <div style={{ fontSize: '12.5px', color: '#b91c1c', marginTop: '2px' }}>
+                              {srt.catatanPenolakan || 'Mohon melengkapi berkas administrasi atau menghubungi sekretariat RT 007.'}
+                            </div>
+                          </div>
+                        </div>
+                      )}
                     </div>
 
-                    <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
                       <button
                         onClick={() => onOpenSuratModal(srt)}
                         style={{
@@ -849,6 +889,33 @@ export default function WargaPortalView({
                           <><FileText size={15} /> Pratinjau Permohonan</>
                         )}
                       </button>
+
+                      {srt.status === 'Ditolak' && (
+                        <button
+                          onClick={() => {
+                            setSuratForm({
+                              jenisSurat: srt.jenisSurat,
+                              tujuan: srt.tujuan,
+                              urgensi: srt.urgensi || 'Biasa'
+                            });
+                            setShowAddSuratModal(true);
+                          }}
+                          style={{
+                            background: '#ea580c',
+                            color: '#ffffff',
+                            padding: '9px 16px',
+                            borderRadius: '8px',
+                            fontSize: '12.5px',
+                            fontWeight: 700,
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '6px'
+                          }}
+                        >
+                          <Plus size={15} /> Perbaiki & Ajukan Ulang
+                        </button>
+                      )}
                     </div>
                   </div>
                 ))}
@@ -923,6 +990,105 @@ export default function WargaPortalView({
                 )}
               </div>
             </div>
+
+            {/* STATUS VERIFIKASI TRANSFER DARI BENDAHARA */}
+            {transferVerifications.filter(v => v.namaWarga?.toLowerCase() === citizen?.nama?.toLowerCase() || v.citizenId === citizen?.id).length > 0 && (
+              <div style={{
+                background: '#ffffff',
+                borderRadius: '16px',
+                border: '1px solid #e2e8f0',
+                padding: '20px',
+                marginBottom: '20px',
+                boxShadow: '0 2px 6px rgba(0,0,0,0.03)'
+              }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', flexWrap: 'wrap', gap: '8px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <div style={{ width: '28px', height: '28px', borderRadius: '8px', background: '#e0f2fe', color: '#0284c7', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <Clock size={16} />
+                    </div>
+                    <h3 style={{ fontSize: '15px', fontWeight: 800, margin: 0, color: '#0f172a' }}>
+                      Status Verifikasi Bukti Transfer Anda oleh Bendahara RT
+                    </h3>
+                  </div>
+                  <span style={{ fontSize: '11.5px', color: '#64748b' }}>
+                    Petugas: Hj. Endang Suryaningsih (Bendahara)
+                  </span>
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  {transferVerifications
+                    .filter(v => v.namaWarga?.toLowerCase() === citizen?.nama?.toLowerCase() || v.citizenId === citizen?.id)
+                    .map(item => (
+                      <div 
+                        key={item.id}
+                        style={{
+                          background: item.status === 'Menunggu Verifikasi' ? '#fffbeb' : item.status === 'Terverifikasi' ? '#f0fdf4' : '#fef2f2',
+                          border: `1px solid ${item.status === 'Menunggu Verifikasi' ? '#fde68a' : item.status === 'Terverifikasi' ? '#bbf7d0' : '#fecaca'}`,
+                          borderRadius: '12px',
+                          padding: '14px 18px',
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'center',
+                          flexWrap: 'wrap',
+                          gap: '12px'
+                        }}
+                      >
+                        <div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <span style={{
+                              padding: '2px 8px',
+                              borderRadius: '6px',
+                              fontSize: '11px',
+                              fontWeight: 800,
+                              background: item.status === 'Menunggu Verifikasi' ? '#f59e0b' : item.status === 'Terverifikasi' ? '#16a34a' : '#dc2626',
+                              color: '#fff'
+                            }}>
+                              {item.status}
+                            </span>
+                            <span style={{ fontSize: '13px', fontWeight: 800, color: '#1e293b' }}>
+                              {item.periode} — Rp {item.nominal.toLocaleString('id-ID')}
+                            </span>
+                            <span style={{ fontSize: '11px', color: '#64748b' }}>
+                              ({item.metode})
+                            </span>
+                          </div>
+
+                          <div style={{ fontSize: '12px', color: '#475569', marginTop: '4px' }}>
+                            Waktu Kirim: <strong>{item.tanggalTransfer}</strong> • Ref: <code>{item.noReferensi}</code>
+                          </div>
+
+                          {item.catatanBendahara && (
+                            <div style={{ fontSize: '12px', marginTop: '6px', fontWeight: 600, color: item.status === 'Terverifikasi' ? '#15803d' : '#b91c1c' }}>
+                              💬 <strong>Catatan Bendahara:</strong> {item.catatanBendahara}
+                            </div>
+                          )}
+                        </div>
+
+                        {item.status === 'Ditolak' && (
+                          <button
+                            onClick={() => {
+                              setSelectedPaymentMethod('transfer');
+                              setSelectedMonth(item.periode.includes('April') ? 'April 2026' : 'Maret 2026');
+                              setShowPaymentModal(true);
+                            }}
+                            style={{
+                              background: '#ea580c',
+                              color: '#fff',
+                              padding: '8px 14px',
+                              borderRadius: '8px',
+                              fontSize: '12px',
+                              fontWeight: 700,
+                              cursor: 'pointer'
+                            }}
+                          >
+                            Unggah Bukti Baru →
+                          </button>
+                        )}
+                      </div>
+                    ))}
+                </div>
+              </div>
+            )}
 
             {/* SEKSI UTAMA: DUA JALUR PEMBAYARAN HANYA TAMPIL JIKA BELUM LUNAS */}
             {isLunas ? (

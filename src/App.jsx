@@ -11,8 +11,7 @@ import InformasiView from './components/views/InformasiView';
 import WargaPortalView from './components/views/WargaPortalView';
 import LoginPage from './components/auth/LoginPage';
 import SuratPrintModal from './components/modals/SuratPrintModal';
-import TambahWargaModal from './components/modals/TambahWargaModal';
-import { INITIAL_CITIZENS, INITIAL_SURAT, INITIAL_TRANSACTIONS, INITIAL_USERS, INITIAL_ANNOUNCEMENTS } from './data/mockData';
+import { INITIAL_CITIZENS, INITIAL_SURAT, INITIAL_TRANSACTIONS, INITIAL_USERS, INITIAL_ANNOUNCEMENTS, INITIAL_TRANSFER_VERIFICATIONS } from './data/mockData';
 import './index.css';
 
 export default function App() {
@@ -29,6 +28,7 @@ export default function App() {
   const [transactions, setTransactions] = useState(INITIAL_TRANSACTIONS);
   const [users, setUsers] = useState(INITIAL_USERS);
   const [announcements, setAnnouncements] = useState(INITIAL_ANNOUNCEMENTS);
+  const [transferVerifications, setTransferVerifications] = useState(INITIAL_TRANSFER_VERIFICATIONS);
   const [currentUserRole, setCurrentUserRole] = useState('Ketua RT');
 
   // Sinkronisasi currentUserRole dengan currentUser
@@ -39,11 +39,15 @@ export default function App() {
   }, [currentUser]);
 
   // Bila role diubah ke Bendahara dan menu sedang di surat, alihkan ke dashboard
+  // Bila role bukan Bendahara (Ketua RT / Sekretaris) dan subMenu verifikasi, alihkan ke rekap
   useEffect(() => {
     if (currentUserRole === 'Bendahara' && activeMenu === 'surat') {
       setActiveMenu('dashboard');
     }
-  }, [currentUserRole, activeMenu]);
+    if (currentUserRole !== 'Bendahara' && activeMenu === 'keuangan' && activeSubMenu === 'verifikasi') {
+      setActiveSubMenu('rekap');
+    }
+  }, [currentUserRole, activeMenu, activeSubMenu]);
   
   // Modals
   const [selectedSuratForPrint, setSelectedSuratForPrint] = useState(null);
@@ -83,6 +87,10 @@ export default function App() {
     if (currentUserRole === 'Bendahara' && menu === 'surat') {
       return;
     }
+    // Ketua RT dan Sekretaris tidak diberi akses ke verifikasi pembayaran transfer
+    if (currentUserRole !== 'Bendahara' && menu === 'keuangan' && subMenu === 'verifikasi') {
+      return;
+    }
     setActiveMenu(menu);
     setActiveSubMenu(subMenu);
   };
@@ -90,12 +98,25 @@ export default function App() {
   const handleApproveSurat = (suratId) => {
     setSuratList(prev => prev.map(s => {
       if (s.id === suratId) {
-        return { ...s, status: 'Disetujui' };
+        return { ...s, status: 'Disetujui', catatanPenolakan: undefined };
       }
       return s;
     }));
     if (selectedSuratForPrint && selectedSuratForPrint.id === suratId) {
-      setSelectedSuratForPrint(prev => ({ ...prev, status: 'Disetujui' }));
+      setSelectedSuratForPrint(prev => ({ ...prev, status: 'Disetujui', catatanPenolakan: undefined }));
+    }
+  };
+
+  const handleRejectSurat = (suratId, catatanPenolakan) => {
+    const reason = catatanPenolakan || 'Permohonan surat belum memenuhi persyaratan administratif RT 007.';
+    setSuratList(prev => prev.map(s => {
+      if (s.id === suratId) {
+        return { ...s, status: 'Ditolak', catatanPenolakan: reason };
+      }
+      return s;
+    }));
+    if (selectedSuratForPrint && selectedSuratForPrint.id === suratId) {
+      setSelectedSuratForPrint(prev => ({ ...prev, status: 'Ditolak', catatanPenolakan: reason }));
     }
   };
 
@@ -148,28 +169,101 @@ export default function App() {
     }
   };
 
-  const handleCitizenPayIuran = (citizenId, nominal, citizenNama) => {
-    setCitizens(prev => prev.map(c => {
-      if (c.id === citizenId || c.nama === citizenNama) {
-        return { ...c, statusIuran: 'Lunas' };
+  const handleCitizenPayIuran = (citizenId, nominal, citizenNama, paymentDetails = {}) => {
+    // Jika via transfer bank, tambahkan ke antrean verifikasi transfer Bendahara
+    if (paymentDetails.metode === 'transfer') {
+      const newVerification = {
+        id: `TRF-${Date.now().toString().slice(-6)}`,
+        citizenId: citizenId || 3,
+        namaWarga: citizenNama || 'Andi Pratama',
+        blok: paymentDetails.blok || 'B2',
+        noRumah: paymentDetails.noRumah || '14',
+        periode: paymentDetails.periode || 'Maret 2026',
+        nominal: nominal || 60000,
+        metode: `Transfer Bank ${paymentDetails.bank === 'mandiri' ? 'Mandiri' : 'BCA'}`,
+        rekeningTujuan: paymentDetails.bank === 'mandiri' ? 'Bank Mandiri 156-00-1928374-1 (Kas RT 007)' : 'Bank BCA 731-098-7654 (Kas RT 007)',
+        tanggalTransfer: new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' }) + ' WIB',
+        noReferensi: `TRF-${Date.now().toString().slice(-5)}`,
+        buktiUrl: paymentDetails.buktiTransfer || 'struk_transfer_warga.jpg',
+        status: 'Menunggu Verifikasi',
+        catatanWarga: paymentDetails.catatan || 'Pembayaran transfer diunggah warga dari Portal Warga',
+        catatanBendahara: ''
+      };
+      setTransferVerifications(prev => [newVerification, ...prev]);
+    } else {
+      // Pembayaran langsung (QRIS atau Tunai offline terkonfirmasi)
+      setCitizens(prev => prev.map(c => {
+        if (c.id === citizenId || c.nama === citizenNama) {
+          return { ...c, statusIuran: 'Lunas' };
+        }
+        return c;
+      }));
+
+      if (currentUser && (currentUser.id === citizenId || currentUser.nama === citizenNama)) {
+        setCurrentUser(prev => ({ ...prev, statusIuran: 'Lunas' }));
       }
-      return c;
+
+      const newTrx = {
+        id: `TRX-${Date.now().toString().slice(-4)}`,
+        tanggal: new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }),
+        kategori: 'Pemasukan',
+        sumber: `Iuran Warga - ${citizenNama}`,
+        keterangan: `Iuran (${paymentDetails.periode || 'Maret 2026'}) via ${paymentDetails.metode === 'tunai' ? 'Setor Tunai' : 'QRIS Digital'}`,
+        nominal: nominal || 60000,
+        petugas: paymentDetails.metode === 'tunai' ? 'Hj. Endang (Setor Tunai)' : 'Sistem QRIS RT 007'
+      };
+      setTransactions(prev => [newTrx, ...prev]);
+    }
+  };
+
+  const handleApproveTransfer = (verificationId, catatanBendahara = '') => {
+    let verifiedItem = null;
+    setTransferVerifications(prev => prev.map(item => {
+      if (item.id === verificationId) {
+        verifiedItem = item;
+        return {
+          ...item,
+          status: 'Terverifikasi',
+          catatanBendahara: catatanBendahara || 'Pembayaran valid & telah masuk mutasi kas RT 007'
+        };
+      }
+      return item;
     }));
 
-    if (currentUser && (currentUser.id === citizenId || currentUser.nama === citizenNama)) {
-      setCurrentUser(prev => ({ ...prev, statusIuran: 'Lunas' }));
-    }
+    if (verifiedItem) {
+      // 1. Update status citizen to Lunas
+      setCitizens(prev => prev.map(c => {
+        if (c.id === verifiedItem.citizenId || c.nama === verifiedItem.namaWarga) {
+          return { ...c, statusIuran: 'Lunas' };
+        }
+        return c;
+      }));
 
-    const newTrx = {
-      id: `TRX-${Date.now()}`,
-      tanggal: new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }),
-      kategori: 'Pemasukan',
-      sumber: `Iuran Warga - ${citizenNama}`,
-      keterangan: 'Iuran kebersihan & keamanan Maret 2026 (Portal Warga)',
-      nominal: nominal || 60000,
-      petugas: 'Sistem QRIS / Bendahara'
-    };
-    setTransactions(prev => [newTrx, ...prev]);
+      // 2. Add into kas transactions
+      const newTrx = {
+        id: `TRX-${Date.now().toString().slice(-4)}`,
+        tanggal: new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }),
+        kategori: 'Pemasukan',
+        sumber: `Iuran Warga - ${verifiedItem.namaWarga}`,
+        keterangan: `Verifikasi transfer iuran ${verifiedItem.periode} (${verifiedItem.metode})`,
+        nominal: verifiedItem.nominal,
+        petugas: 'Hj. Endang (Bendahara)'
+      };
+      setTransactions(prev => [newTrx, ...prev]);
+    }
+  };
+
+  const handleRejectTransfer = (verificationId, catatanPenolakan = '') => {
+    setTransferVerifications(prev => prev.map(item => {
+      if (item.id === verificationId) {
+        return {
+          ...item,
+          status: 'Ditolak',
+          catatanBendahara: catatanPenolakan || 'Bukti transfer tidak valid atau dana belum masuk rekening RT.'
+        };
+      }
+      return item;
+    }));
   };
 
   const handleAddAnnouncement = (newAnn) => {
@@ -213,6 +307,7 @@ export default function App() {
           citizen={currentUser}
           suratList={suratList}
           announcements={announcements}
+          transferVerifications={transferVerifications}
           onAddSurat={handleAddSurat}
           onOpenSuratModal={(surat) => setSelectedSuratForPrint(surat)}
           onPayIuran={handleCitizenPayIuran}
@@ -224,6 +319,7 @@ export default function App() {
             surat={selectedSuratForPrint}
             onClose={() => setSelectedSuratForPrint(null)}
             onApprove={handleApproveSurat}
+            onReject={handleRejectSurat}
           />
         )}
       </>
@@ -288,6 +384,10 @@ export default function App() {
               onSelectSubMenu={handleSelectSubMenu}
               citizens={citizens}
               onToggleIuran={handleToggleIuran}
+              transferVerifications={transferVerifications}
+              onApproveTransfer={handleApproveTransfer}
+              onRejectTransfer={handleRejectTransfer}
+              currentUserRole={currentUserRole}
             />
           )}
 
@@ -298,6 +398,7 @@ export default function App() {
               onSelectSubMenu={handleSelectSubMenu}
               onOpenSuratModal={(surat) => setSelectedSuratForPrint(surat)}
               onApproveSurat={handleApproveSurat}
+              onRejectSurat={handleRejectSurat}
               onAddSurat={handleAddSurat}
               currentUserRole={currentUserRole}
             />
@@ -336,6 +437,7 @@ export default function App() {
           surat={selectedSuratForPrint}
           onClose={() => setSelectedSuratForPrint(null)}
           onApprove={handleApproveSurat}
+          onReject={handleRejectSurat}
         />
       )}
 

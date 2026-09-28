@@ -147,6 +147,13 @@ export default function SidebarDrawer({
                     • Catatan Iuran Warga
                   </button>
                 </li>
+                {currentUserRole === 'Bendahara' && (
+                  <li className={`nav-sub-item ${activeMenu === 'keuangan' && activeSubMenu === 'verifikasi' ? 'active' : ''}`}>
+                    <button onClick={() => { onSelectSubMenu('keuangan', 'verifikasi'); onClose(); }}>
+                      • Verifikasi Bukti Transfer
+                    </button>
+                  </li>
+                )}
                 <li className={`nav-sub-item ${activeMenu === 'keuangan' && activeSubMenu === 'rekap' ? 'active' : ''}`}>
                   <button onClick={() => { onSelectSubMenu('keuangan', 'rekap'); onClose(); }}>
                     • Rekapitulasi Kas Masuk & Keluar

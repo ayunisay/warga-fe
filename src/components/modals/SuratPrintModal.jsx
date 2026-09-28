@@ -1,12 +1,26 @@
-import React from 'react';
-import { Printer, X, CheckCircle, FileText } from 'lucide-react';
+import React, { useState } from 'react';
+import { Printer, X, CheckCircle, FileText, XCircle, AlertCircle } from 'lucide-react';
 import { RT_INFO } from '../../data/mockData';
 
-export default function SuratPrintModal({ surat, onClose, onApprove }) {
+export default function SuratPrintModal({ surat, onClose, onApprove, onReject }) {
+  const [showRejectForm, setShowRejectForm] = useState(false);
+  const [rejectReason, setRejectReason] = useState('');
+
   if (!surat) return null;
 
   const handlePrint = () => {
     window.print();
+  };
+
+  const handleConfirmReject = () => {
+    if (!rejectReason.trim()) {
+      alert('Mohon tuliskan alasan penolakan surat!');
+      return;
+    }
+    if (onReject) {
+      onReject(surat.id, rejectReason);
+    }
+    setShowRejectForm(false);
   };
 
   return (
@@ -23,29 +37,60 @@ export default function SuratPrintModal({ surat, onClose, onApprove }) {
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <FileText size={20} color="#3B7594" />
-            <h3 style={{ fontSize: '16px', fontWeight: 700, color: '#1e293b' }}>
-              Pratinjau Surat Resmi RT 007
-            </h3>
+            <div>
+              <h3 style={{ fontSize: '16px', fontWeight: 700, color: '#1e293b', margin: 0 }}>
+                Pratinjau Surat Resmi RT 007
+              </h3>
+              <div style={{ fontSize: '11px', color: '#64748b', marginTop: '2px' }}>
+                Status: <strong style={{ 
+                  color: surat.status === 'Disetujui' ? '#16a34a' : surat.status === 'Ditolak' ? '#dc2626' : '#d97706' 
+                }}>{surat.status}</strong>
+              </div>
+            </div>
           </div>
           <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-            {surat.status !== 'Disetujui' && surat.status !== 'Selesai' && (
-              <button 
-                onClick={() => onApprove(surat.id)}
-                style={{
-                  background: '#16a34a',
-                  color: '#ffffff',
-                  padding: '6px 14px',
-                  borderRadius: '8px',
-                  fontSize: '13px',
-                  fontWeight: 600,
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '6px'
-                }}
-              >
-                <CheckCircle size={15} />
-                Setujui & TTD
-              </button>
+            {surat.status !== 'Disetujui' && surat.status !== 'Selesai' && surat.status !== 'Ditolak' && (
+              <>
+                <button 
+                  onClick={() => onApprove(surat.id)}
+                  style={{
+                    background: '#16a34a',
+                    color: '#ffffff',
+                    padding: '6px 14px',
+                    borderRadius: '8px',
+                    fontSize: '13px',
+                    fontWeight: 600,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    cursor: 'pointer'
+                  }}
+                >
+                  <CheckCircle size={15} />
+                  Setujui & TTD
+                </button>
+
+                {onReject && (
+                  <button 
+                    onClick={() => setShowRejectForm(true)}
+                    style={{
+                      background: '#dc2626',
+                      color: '#ffffff',
+                      padding: '6px 14px',
+                      borderRadius: '8px',
+                      fontSize: '13px',
+                      fontWeight: 600,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    <XCircle size={15} />
+                    Tolak
+                  </button>
+                )}
+              </>
             )}
             <button 
               onClick={handlePrint}
@@ -80,6 +125,120 @@ export default function SuratPrintModal({ surat, onClose, onApprove }) {
             </button>
           </div>
         </div>
+        {/* Banner Penolakan jika surat ditolak */}
+        {surat.status === 'Ditolak' && (
+          <div style={{
+            background: '#fee2e2',
+            borderBottom: '1px solid #fca5a5',
+            padding: '14px 24px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '12px'
+          }}>
+            <AlertCircle size={22} color="#dc2626" style={{ flexShrink: 0 }} />
+            <div>
+              <div style={{ fontSize: '13.5px', fontWeight: 800, color: '#991b1b' }}>
+                PERMOHONAN SURAT INI TELAH DITOLAK PENGURUS RT
+              </div>
+              <div style={{ fontSize: '12.5px', color: '#b91c1c', marginTop: '2px' }}>
+                <strong>Catatan / Alasan:</strong> {surat.catatanPenolakan || 'Belum memenuhi persyaratan administratif RT 007.'}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Dialog Form Alasan Penolakan */}
+        {showRejectForm && (
+          <div style={{
+            background: '#fff1f2',
+            borderBottom: '2px solid #fecdd3',
+            padding: '18px 24px'
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+              <h4 style={{ fontSize: '14px', fontWeight: 800, color: '#9f1239', margin: 0 }}>
+                Konfirmasi Penolakan Surat Pengantar
+              </h4>
+              <button 
+                onClick={() => setShowRejectForm(false)}
+                style={{ background: 'none', border: 'none', color: '#881337', cursor: 'pointer', fontWeight: 700 }}
+              >
+                ✕ Batal
+              </button>
+            </div>
+            
+            <p style={{ fontSize: '12px', color: '#9f1239', margin: '0 0 10px' }}>
+              Pilih template alasan atau ketik alasan penolakan yang akan dikirimkan ke pemohon ({surat.pemohon}):
+            </p>
+
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '10px' }}>
+              {[
+                'Lampiran KTP / KK belum jelas atau tidak terbaca',
+                'Ada tunggakan iuran bulanan RT yang belum diselesaikan',
+                'Keperluan surat di luar kewenangan pengurus RT 007',
+                'Data pemohon tidak sesuai dengan database kependudukan'
+              ].map((tpl, i) => (
+                <button
+                  key={i}
+                  type="button"
+                  onClick={() => setRejectReason(tpl)}
+                  style={{
+                    background: rejectReason === tpl ? '#f43f5e' : '#ffffff',
+                    color: rejectReason === tpl ? '#ffffff' : '#881337',
+                    border: '1px solid #fda4af',
+                    padding: '4px 8px',
+                    borderRadius: '6px',
+                    fontSize: '11px',
+                    fontWeight: 600,
+                    cursor: 'pointer'
+                  }}
+                >
+                  • {tpl}
+                </button>
+              ))}
+            </div>
+
+            <textarea
+              rows={2}
+              value={rejectReason}
+              onChange={(e) => setRejectReason(e.target.value)}
+              placeholder="Ketik catatan penolakan spesifik..."
+              style={{
+                width: '100%',
+                padding: '8px 10px',
+                borderRadius: '6px',
+                border: '1px solid #fda4af',
+                fontSize: '12.5px',
+                boxSizing: 'border-box',
+                marginBottom: '10px'
+              }}
+            />
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
+              <button
+                type="button"
+                onClick={() => setShowRejectForm(false)}
+                style={{ padding: '6px 12px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '12px', cursor: 'pointer' }}
+              >
+                Batal
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmReject}
+                style={{
+                  padding: '6px 16px',
+                  borderRadius: '6px',
+                  background: '#e11d48',
+                  color: '#ffffff',
+                  fontSize: '12px',
+                  fontWeight: 700,
+                  cursor: 'pointer'
+                }}
+              >
+                Kirim Penolakan Surat
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Official Letter Content (Printable) */}
         <div className="printable-area" style={{ padding: '36px 44px', background: '#ffffff', color: '#111827', fontFamily: "'Times New Roman', serif" }}>

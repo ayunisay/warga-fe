@@ -473,3 +473,58 @@ export const INITIAL_ANNOUNCEMENTS = [
     penulis: "Seksi Kebersihan"
   }
 ];
+
+export const INITIAL_TRANSFER_VERIFICATIONS = [
+  {
+    id: "TRF-2026-088",
+    citizenId: 3,
+    namaWarga: "Andi Pratama",
+    blok: "B2",
+    noRumah: "14",
+    periode: "April 2026",
+    nominal: 60000,
+    metode: "Transfer Bank Mandiri",
+    rekeningTujuan: "Bank Mandiri 156-00-1928374-1 (Kas RT 007)",
+    tanggalTransfer: "28 Maret 2026, 14:15 WIB",
+    noReferensi: "MDR-20260328-98124",
+    buktiUrl: "struk_mandiri_andi.jpg",
+    status: "Menunggu Verifikasi",
+    catatanWarga: "Sudah ditransfer via Livin Mandiri untuk iuran April 2026",
+    catatanBendahara: ""
+  },
+  {
+    id: "TRF-2026-089",
+    citizenId: 7,
+    namaWarga: "Dimas Anggara",
+    blok: "C3",
+    noRumah: "05",
+    periode: "April & Mei 2026 (2 Bulan)",
+    nominal: 120000,
+    metode: "Transfer Bank BCA",
+    rekeningTujuan: "Bank BCA 731-098-7654 (Kas RT 007)",
+    tanggalTransfer: "27 Maret 2026, 19:30 WIB",
+    noReferensi: "BCA-20260327-44021",
+    buktiUrl: "struk_bca_dimas.jpg",
+    status: "Menunggu Verifikasi",
+    catatanWarga: "Bayar 2 bulan sekalian Bu Endang, terima kasih",
+    catatanBendahara: ""
+  },
+  {
+    id: "TRF-2026-085",
+    citizenId: 5,
+    namaWarga: "Budi Santoso",
+    blok: "D1",
+    noRumah: "12",
+    periode: "Maret 2026",
+    nominal: 60000,
+    metode: "QRIS Digital RT 007",
+    rekeningTujuan: "NMID: ID1020304050607 (RT 007 Teluk Pucung)",
+    tanggalTransfer: "25 Maret 2026, 09:10 WIB",
+    noReferensi: "QRS-20260325-11094",
+    buktiUrl: "struk_qris_budi.jpg",
+    status: "Terverifikasi",
+    catatanWarga: "Iuran Maret via QRIS GoPay",
+    catatanBendahara: "Dana telah masuk di mutasi rekening BCA RT 007"
+  }
+];
+

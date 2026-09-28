@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { 
   FileText, CheckCircle2, Clock, Printer, Plus, 
-  Search, Eye, ShieldCheck, AlertCircle 
+  Search, Eye, ShieldCheck, AlertCircle, XCircle, X
 } from 'lucide-react';
 
 export default function SuratView({ 
@@ -10,11 +10,14 @@ export default function SuratView({
   onSelectSubMenu, 
   onOpenSuratModal,
   onApproveSurat,
+  onRejectSurat,
   onAddSurat,
   currentUserRole = 'Ketua RT'
 }) {
   const [searchTerm, setSearchTerm] = useState('');
   const [showAddSuratModal, setShowAddSuratModal] = useState(false);
+  const [rejectingSurat, setRejectingSurat] = useState(null);
+  const [rejectReason, setRejectReason] = useState('');
   const [formData, setFormData] = useState({
     jenisSurat: 'Surat Pengantar SKCK (Catatan Kepolisian)',
     pemohon: '',
@@ -201,7 +204,13 @@ export default function SuratView({
                     borderRadius: '6px',
                     fontSize: '11px',
                     fontWeight: 700,
-                    background: srt.status === 'Menunggu Verifikasi' ? '#f59e0b' : srt.status === 'Disetujui' ? '#10b981' : '#64748b',
+                    background: srt.status === 'Menunggu Verifikasi' 
+                      ? '#f59e0b' 
+                      : srt.status === 'Disetujui' 
+                        ? '#10b981' 
+                        : srt.status === 'Ditolak'
+                          ? '#ef4444'
+                          : '#64748b',
                     color: '#ffffff'
                   }}>
                     {srt.status}
@@ -227,6 +236,29 @@ export default function SuratView({
                 <div style={{ fontSize: '12.5px', color: '#cbd5e1', marginTop: '6px', background: 'rgba(255,255,255,0.06)', padding: '8px 12px', borderRadius: '8px' }}>
                   <strong>Keperluan / Maksud:</strong> {srt.tujuan}
                 </div>
+
+                {srt.status === 'Ditolak' && (
+                  <div style={{
+                    fontSize: '12.5px',
+                    color: '#fca5a5',
+                    marginTop: '8px',
+                    background: 'rgba(239, 68, 68, 0.15)',
+                    border: '1px solid rgba(239, 68, 68, 0.35)',
+                    padding: '10px 14px',
+                    borderRadius: '8px',
+                    display: 'flex',
+                    alignItems: 'flex-start',
+                    gap: '8px'
+                  }}>
+                    <AlertCircle size={16} color="#f87171" style={{ marginTop: '2px', flexShrink: 0 }} />
+                    <div>
+                      <strong style={{ color: '#fca5a5' }}>Alasan Penolakan dari Pengurus:</strong>
+                      <div style={{ marginTop: '2px', color: '#fee2e2' }}>
+                        {srt.catatanPenolakan || 'Permohonan surat belum memenuhi persyaratan administratif RT 007.'}
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Action Buttons */}
@@ -249,22 +281,46 @@ export default function SuratView({
                 </button>
 
                 {canPengajuanSurat && srt.status === 'Menunggu Verifikasi' && (
-                  <button 
-                    onClick={() => onApproveSurat(srt.id)}
-                    style={{
-                      background: '#16a34a',
-                      color: '#ffffff',
-                      padding: '8px 16px',
-                      borderRadius: '8px',
-                      fontSize: '12.5px',
-                      fontWeight: 700,
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '6px'
-                    }}
-                  >
-                    <CheckCircle2 size={15} /> Setujui
-                  </button>
+                  <>
+                    <button 
+                      onClick={() => onApproveSurat(srt.id)}
+                      style={{
+                        background: '#16a34a',
+                        color: '#ffffff',
+                        padding: '8px 16px',
+                        borderRadius: '8px',
+                        fontSize: '12.5px',
+                        fontWeight: 700,
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      <CheckCircle2 size={15} /> Setujui
+                    </button>
+
+                    <button 
+                      onClick={() => {
+                        setRejectingSurat(srt);
+                        setRejectReason('');
+                      }}
+                      style={{
+                        background: '#dc2626',
+                        color: '#ffffff',
+                        padding: '8px 16px',
+                        borderRadius: '8px',
+                        fontSize: '12.5px',
+                        fontWeight: 700,
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      <XCircle size={15} /> Tolak
+                    </button>
+                  </>
                 )}
               </div>
             </div>
@@ -372,6 +428,122 @@ export default function SuratView({
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Dialog Tolak Permohonan Surat */}
+      {rejectingSurat && (
+        <div className="modal-backdrop">
+          <div className="modal-content-box" style={{ maxWidth: '520px', padding: '24px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', borderBottom: '1px solid #fee2e2', paddingBottom: '10px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: '#fee2e2', color: '#dc2626', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <XCircle size={20} />
+                </div>
+                <h3 style={{ fontSize: '17px', fontWeight: 800, margin: 0, color: '#991b1b' }}>
+                  Tolak Permohonan Surat
+                </h3>
+              </div>
+              <button 
+                onClick={() => setRejectingSurat(null)}
+                style={{ padding: '6px', borderRadius: '6px', background: '#f1f5f9', cursor: 'pointer' }}
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            <div style={{ background: '#f8fafc', padding: '12px 14px', borderRadius: '10px', marginBottom: '16px', border: '1px solid #e2e8f0', fontSize: '12.5px' }}>
+              <div><strong>Pemohon:</strong> {rejectingSurat.pemohon} ({rejectingSurat.nik})</div>
+              <div style={{ marginTop: '2px' }}><strong>Jenis Surat:</strong> {rejectingSurat.jenisSurat}</div>
+              <div style={{ marginTop: '2px', color: '#64748b' }}>No: {rejectingSurat.noSurat}</div>
+            </div>
+
+            <div style={{ marginBottom: '14px' }}>
+              <label style={{ display: 'block', fontSize: '13px', fontWeight: 700, color: '#1e293b', marginBottom: '6px' }}>
+                Pilih Alasan Penolakan (Template Cepat):
+              </label>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '10px' }}>
+                {[
+                  'Lampiran KTP / KK belum jelas atau tidak terbaca',
+                  'Ada tunggakan iuran bulanan RT yang belum diselesaikan',
+                  'Keperluan surat di luar kewenangan pengurus RT 007',
+                  'Data pemohon tidak cocok dengan database kependudukan'
+                ].map((tpl, i) => (
+                  <button
+                    key={i}
+                    type="button"
+                    onClick={() => setRejectReason(tpl)}
+                    style={{
+                      background: rejectReason === tpl ? '#fee2e2' : '#f1f5f9',
+                      color: rejectReason === tpl ? '#991b1b' : '#475569',
+                      border: `1px solid ${rejectReason === tpl ? '#fca5a5' : '#cbd5e1'}`,
+                      padding: '5px 10px',
+                      borderRadius: '6px',
+                      fontSize: '11.5px',
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                      textAlign: 'left'
+                    }}
+                  >
+                    • {tpl}
+                  </button>
+                ))}
+              </div>
+
+              <label style={{ display: 'block', fontSize: '13px', fontWeight: 700, color: '#1e293b', marginBottom: '6px' }}>
+                Catatan Penolakan (Akan dibaca oleh pemohon di portal warga) *
+              </label>
+              <textarea
+                rows={3}
+                value={rejectReason}
+                onChange={(e) => setRejectReason(e.target.value)}
+                placeholder="Tuliskan catatan perbaikan atau alasan penolakan secara spesifik..."
+                style={{
+                  width: '100%',
+                  padding: '10px',
+                  borderRadius: '8px',
+                  border: '1px solid #cbd5e1',
+                  fontSize: '13px',
+                  boxSizing: 'border-box'
+                }}
+              />
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+              <button
+                type="button"
+                onClick={() => setRejectingSurat(null)}
+                style={{ padding: '8px 16px', borderRadius: '8px', border: '1px solid #cbd5e1', color: '#64748b', cursor: 'pointer' }}
+              >
+                Batal
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  if (!rejectReason.trim()) {
+                    alert('Mohon cantumkan alasan penolakan agar warga mengetahui kekurangan berkasnya!');
+                    return;
+                  }
+                  onRejectSurat(rejectingSurat.id, rejectReason);
+                  setRejectingSurat(null);
+                }}
+                style={{
+                  padding: '8px 18px',
+                  borderRadius: '8px',
+                  background: '#dc2626',
+                  color: '#ffffff',
+                  fontWeight: 700,
+                  fontSize: '13px',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px'
+                }}
+              >
+                <XCircle size={15} /> Konfirmasi Tolak
+              </button>
+            </div>
           </div>
         </div>
       )}
