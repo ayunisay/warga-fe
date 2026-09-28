@@ -1,122 +1,205 @@
-import { useState } from 'react'
-import heroImg from './assets/hero.png'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import './App.css'
+import React, { useState } from 'react';
+import Header from './components/Header';
+import SidebarDrawer from './components/SidebarDrawer';
+import Footer from './components/Footer';
+import DashboardView from './components/views/DashboardView';
+import DataWargaView from './components/views/DataWargaView';
+import KeuanganView from './components/views/KeuanganView';
+import SuratView from './components/views/SuratView';
+import SettingsView from './components/views/SettingsView';
+import SuratPrintModal from './components/modals/SuratPrintModal';
+import TambahWargaModal from './components/modals/TambahWargaModal';
+import { INITIAL_CITIZENS, INITIAL_SURAT, INITIAL_TRANSACTIONS } from './data/mockData';
+import { Menu } from 'lucide-react';
+import './index.css';
 
-function App() {
-  const [count, setCount] = useState(0)
+export default function App() {
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [activeMenu, setActiveMenu] = useState('dashboard');
+  const [activeSubMenu, setActiveSubMenu] = useState('master');
+  
+  // App States
+  const [citizens, setCitizens] = useState(INITIAL_CITIZENS);
+  const [suratList, setSuratList] = useState(INITIAL_SURAT);
+  const [transactions, setTransactions] = useState(INITIAL_TRANSACTIONS);
+  
+  // Modals
+  const [selectedSuratForPrint, setSelectedSuratForPrint] = useState(null);
+  const [isAddCitizenModalOpen, setIsAddCitizenModalOpen] = useState(false);
+
+  // Navigation title mapper
+  const getPageTitle = () => {
+    switch (activeMenu) {
+      case 'dashboard':
+        return 'DASHBOARD';
+      case 'warga':
+        return 'DATA WARGA';
+      case 'keuangan':
+        return 'KEUANGAN & IURAN';
+      case 'surat':
+        return 'PERMOHONAN SURAT';
+      case 'settings':
+        return 'MANAJEMEN PENGGUNA';
+      default:
+        return 'DASHBOARD';
+    }
+  };
+
+  const handleSelectMenu = (menu) => {
+    setActiveMenu(menu);
+    if (menu === 'warga') setActiveSubMenu('master');
+    if (menu === 'keuangan') setActiveSubMenu('rekap');
+    if (menu === 'surat') setActiveSubMenu('masuk');
+  };
+
+  const handleSelectSubMenu = (menu, subMenu) => {
+    setActiveMenu(menu);
+    setActiveSubMenu(subMenu);
+  };
+
+  const handleApproveSurat = (suratId) => {
+    setSuratList(prev => prev.map(s => {
+      if (s.id === suratId) {
+        return { ...s, status: 'Disetujui' };
+      }
+      return s;
+    }));
+    if (selectedSuratForPrint && selectedSuratForPrint.id === suratId) {
+      setSelectedSuratForPrint(prev => ({ ...prev, status: 'Disetujui' }));
+    }
+  };
+
+  const handleAddCitizen = (newCitizen) => {
+    setCitizens(prev => [newCitizen, ...prev]);
+  };
+
+  const handleDeleteCitizen = (citizenId) => {
+    if (window.confirm('Yakin ingin menghapus data warga ini?')) {
+      setCitizens(prev => prev.filter(c => c.id !== citizenId));
+    }
+  };
+
+  const handleAddTransaction = (newTrx) => {
+    setTransactions(prev => [newTrx, ...prev]);
+  };
+
+  const handleToggleIuran = (citizenId) => {
+    setCitizens(prev => prev.map(c => {
+      if (c.id === citizenId) {
+        return {
+          ...c,
+          statusIuran: c.statusIuran === 'Lunas' ? 'Menunggak' : 'Lunas'
+        };
+      }
+      return c;
+    }));
+  };
+
+  const handleAddSurat = (newSurat) => {
+    setSuratList(prev => [newSurat, ...prev]);
+  };
 
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.jsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
+    <div className="app-container">
+      {/* 1. Left Accent Strip (matches the wireframe leftmost vertical blue bar) */}
+      <div className="left-accent-strip">
+        <button 
+          className="hamburger-btn-strip"
+          onClick={() => setIsSidebarOpen(true)}
+          title="Buka Navigasi Menu"
         >
-          Count is {count}
+          <Menu size={24} strokeWidth={2.4} />
         </button>
-      </section>
+      </div>
 
-      <div className="ticks"></div>
+      {/* 2. Slide-out Navigation Drawer (Image 2) */}
+      <SidebarDrawer 
+        isOpen={isSidebarOpen}
+        onClose={() => setIsSidebarOpen(false)}
+        activeMenu={activeMenu}
+        activeSubMenu={activeSubMenu}
+        onSelectMenu={handleSelectMenu}
+        onSelectSubMenu={handleSelectSubMenu}
+      />
 
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
+      {/* 3. Main Content Body */}
+      <main className="main-wrapper">
+        {/* Top Header */}
+        <Header 
+          title={getPageTitle()}
+          onToggleSidebar={() => setIsSidebarOpen(true)}
+        />
+
+        {/* Page Content based on active navigation */}
+        <div className="page-body">
+          {activeMenu === 'dashboard' && (
+            <DashboardView 
+              citizens={citizens}
+              suratList={suratList}
+              transactions={transactions}
+              onNavigate={handleSelectSubMenu}
+              onOpenSuratModal={(surat) => setSelectedSuratForPrint(surat)}
+              onApproveSurat={handleApproveSurat}
+            />
+          )}
+
+          {activeMenu === 'warga' && (
+            <DataWargaView 
+              citizens={citizens}
+              activeSubMenu={activeSubMenu}
+              onSelectSubMenu={handleSelectSubMenu}
+              onOpenAddModal={() => setIsAddCitizenModalOpen(true)}
+              onDeleteCitizen={handleDeleteCitizen}
+            />
+          )}
+
+          {activeMenu === 'keuangan' && (
+            <KeuanganView 
+              transactions={transactions}
+              onAddTransaction={handleAddTransaction}
+              activeSubMenu={activeSubMenu}
+              onSelectSubMenu={handleSelectSubMenu}
+              citizens={citizens}
+              onToggleIuran={handleToggleIuran}
+            />
+          )}
+
+          {activeMenu === 'surat' && (
+            <SuratView 
+              suratList={suratList}
+              activeSubMenu={activeSubMenu}
+              onSelectSubMenu={handleSelectSubMenu}
+              onOpenSuratModal={(surat) => setSelectedSuratForPrint(surat)}
+              onApproveSurat={handleApproveSurat}
+              onAddSurat={handleAddSurat}
+            />
+          )}
+
+          {activeMenu === 'settings' && (
+            <SettingsView />
+          )}
         </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
 
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
-  )
+        {/* Footer (matches wireframe footer bar) */}
+        <Footer />
+      </main>
+
+      {/* Modals */}
+      {selectedSuratForPrint && (
+        <SuratPrintModal 
+          surat={selectedSuratForPrint}
+          onClose={() => setSelectedSuratForPrint(null)}
+          onApprove={handleApproveSurat}
+        />
+      )}
+
+      {isAddCitizenModalOpen && (
+        <TambahWargaModal 
+          isOpen={isAddCitizenModalOpen}
+          onClose={() => setIsAddCitizenModalOpen(false)}
+          onSave={handleAddCitizen}
+        />
+      )}
+    </div>
+  );
 }
-
-export default App
