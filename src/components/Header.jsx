@@ -1,9 +1,9 @@
 import React from 'react';
-import { Menu, Bell, ShieldCheck } from 'lucide-react';
+import { Menu, Bell, ShieldCheck, LogOut } from 'lucide-react';
 
-export default function Header({ title, onToggleSidebar, currentUserRole = "Ketua RT (Superadmin)" }) {
+export default function Header({ title, onToggleSidebar, currentUserRole = "Ketua RT", onLogout }) {
   const getGreeting = () => {
-    if (currentUserRole.includes('Ketua')) return { name: 'Hi, Ketua', initial: 'KT', color: '#3B7594' };
+    if (currentUserRole.includes('Ketua')) return { name: 'Hi, Ketua RT', initial: 'KT', color: '#3B7594' };
     if (currentUserRole.includes('Sekretaris')) return { name: 'Hi, Sekretaris', initial: 'SK', color: '#0284c7' };
     if (currentUserRole.includes('Bendahara')) return { name: 'Hi, Bendahara', initial: 'BD', color: '#059669' };
     return { name: 'Hi, Warga', initial: 'WG', color: '#64748b' };
@@ -37,10 +37,10 @@ export default function Header({ title, onToggleSidebar, currentUserRole = "Ketu
         <h1 className="header-title">{title}</h1>
       </div>
 
-      <div className="header-right">
+      <div className="header-right" style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
         <div style={{ textAlign: 'right' }}>
           <div className="user-greeting">{user.name}</div>
-          <div style={{ fontSize: '11px', color: '#64748b', fontWeight: 600 }}>{currentUserRole.split(' ')[0]}</div>
+          <div style={{ fontSize: '11px', color: '#64748b', fontWeight: 600 }}>{currentUserRole}</div>
         </div>
         <div 
           className="user-avatar-circle" 
@@ -48,6 +48,29 @@ export default function Header({ title, onToggleSidebar, currentUserRole = "Ketu
         >
           <span style={{ fontSize: '15px', fontWeight: 800 }}>{user.initial}</span>
         </div>
+
+        {onLogout && (
+          <button
+            onClick={onLogout}
+            title="Keluar / Ganti Akun"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              padding: '8px 12px',
+              borderRadius: '8px',
+              background: '#fee2e2',
+              color: '#dc2626',
+              fontSize: '12px',
+              fontWeight: 700,
+              border: '1px solid #fecaca',
+              cursor: 'pointer',
+              marginLeft: '4px'
+            }}
+          >
+            <LogOut size={14} /> Keluar
+          </button>
+        )}
       </div>
     </header>
   );

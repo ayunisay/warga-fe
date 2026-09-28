@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Header from './components/Header';
 import SidebarDrawer from './components/SidebarDrawer';
 import Footer from './components/Footer';
@@ -7,12 +7,17 @@ import DataWargaView from './components/views/DataWargaView';
 import KeuanganView from './components/views/KeuanganView';
 import SuratView from './components/views/SuratView';
 import SettingsView from './components/views/SettingsView';
+import WargaPortalView from './components/views/WargaPortalView';
+import LoginPage from './components/auth/LoginPage';
 import SuratPrintModal from './components/modals/SuratPrintModal';
 import TambahWargaModal from './components/modals/TambahWargaModal';
 import { INITIAL_CITIZENS, INITIAL_SURAT, INITIAL_TRANSACTIONS, INITIAL_USERS } from './data/mockData';
 import './index.css';
 
 export default function App() {
+  // User Authentication State
+  const [currentUser, setCurrentUser] = useState(null); // null = tampil halaman login
+
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [activeMenu, setActiveMenu] = useState('dashboard');
   const [activeSubMenu, setActiveSubMenu] = useState('master');
@@ -24,8 +29,15 @@ export default function App() {
   const [users, setUsers] = useState(INITIAL_USERS);
   const [currentUserRole, setCurrentUserRole] = useState('Ketua RT');
 
+  // Sinkronisasi currentUserRole dengan currentUser
+  useEffect(() => {
+    if (currentUser?.role) {
+      setCurrentUserRole(currentUser.role);
+    }
+  }, [currentUser]);
+
   // Bila role diubah ke Bendahara dan menu sedang di surat, alihkan ke dashboard
-  React.useEffect(() => {
+  useEffect(() => {
     if (currentUserRole === 'Bendahara' && activeMenu === 'surat') {
       setActiveMenu('dashboard');
     }
@@ -39,7 +51,7 @@ export default function App() {
   const getPageTitle = () => {
     switch (activeMenu) {
       case 'dashboard':
-        return 'DASHBOARD';
+        return 'DASHBOARD PENGURUS';
       case 'warga':
         return 'DATA WARGA';
       case 'keuangan':
@@ -132,6 +144,67 @@ export default function App() {
     }
   };
 
+  const handleCitizenPayIuran = (citizenId, nominal, citizenNama) => {
+    setCitizens(prev => prev.map(c => {
+      if (c.id === citizenId || c.nama === citizenNama) {
+        return { ...c, statusIuran: 'Lunas' };
+      }
+      return c;
+    }));
+
+    if (currentUser && (currentUser.id === citizenId || currentUser.nama === citizenNama)) {
+      setCurrentUser(prev => ({ ...prev, statusIuran: 'Lunas' }));
+    }
+
+    const newTrx = {
+      id: `TRX-${Date.now()}`,
+      tanggal: new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }),
+      kategori: 'Pemasukan',
+      sumber: `Iuran Warga - ${citizenNama}`,
+      keterangan: 'Iuran kebersihan & keamanan Maret 2026 (Portal Warga)',
+      nominal: nominal || 60000,
+      petugas: 'Sistem QRIS / Bendahara'
+    };
+    setTransactions(prev => [newTrx, ...prev]);
+  };
+
+  // Jika belum login, tampilkan Halaman Login
+  if (!currentUser) {
+    return (
+      <LoginPage 
+        onLogin={(user) => {
+          setCurrentUser(user);
+          setCurrentUserRole(user.role);
+        }} 
+      />
+    );
+  }
+
+  // Jika login sebagai Warga, arahkan ke Portal Layanan Warga RT 007
+  if (currentUser.role === 'Warga') {
+    return (
+      <>
+        <WargaPortalView 
+          citizen={currentUser}
+          suratList={suratList}
+          onAddSurat={handleAddSurat}
+          onOpenSuratModal={(surat) => setSelectedSuratForPrint(surat)}
+          onPayIuran={handleCitizenPayIuran}
+          onLogout={() => setCurrentUser(null)}
+        />
+
+        {selectedSuratForPrint && (
+          <SuratPrintModal 
+            surat={selectedSuratForPrint}
+            onClose={() => setSelectedSuratForPrint(null)}
+            onApprove={handleApproveSurat}
+          />
+        )}
+      </>
+    );
+  }
+
+  // Tampilan Pengurus RT (Ketua RT, Sekretaris, Bendahara)
   return (
     <div className="app-container">
       {/* 1. Slide-out Navigation Drawer (Image 2) */}
@@ -143,6 +216,8 @@ export default function App() {
         onSelectMenu={handleSelectMenu}
         onSelectSubMenu={handleSelectSubMenu}
         currentUserRole={currentUserRole}
+        currentUserName={currentUser.nama}
+        onLogout={() => setCurrentUser(null)}
       />
 
       {/* 3. Main Content Body */}
@@ -152,6 +227,7 @@ export default function App() {
           title={getPageTitle()}
           onToggleSidebar={() => setIsSidebarOpen(true)}
           currentUserRole={currentUserRole}
+          onLogout={() => setCurrentUser(null)}
         />
 
         {/* Page Content based on active navigation */}

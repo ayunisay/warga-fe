@@ -8,7 +8,9 @@ export default function SidebarDrawer({
   activeSubMenu, 
   onSelectMenu, 
   onSelectSubMenu,
-  currentUserRole = 'Ketua RT'
+  currentUserRole = 'Ketua RT',
+  currentUserName = 'H. Bambang Sugiarto',
+  onLogout
 }) {
   // State dropdown terbuka / tertutup per kategori menu
   const [openDropdowns, setOpenDropdowns] = useState({
@@ -218,14 +220,34 @@ export default function SidebarDrawer({
         </nav>
 
         {/* User Footer Profile */}
-        <div className="sidebar-user-footer">
-          <div className="user-avatar-circle" style={{ width: '38px', height: '38px', background: '#2c5c75' }}>
-            <UserCheck size={18} />
+        <div className="sidebar-user-footer" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <div className="user-avatar-circle" style={{ width: '38px', height: '38px', background: '#2c5c75' }}>
+              <UserCheck size={18} />
+            </div>
+            <div className="info">
+              <h4 style={{ fontSize: '13.5px', margin: 0 }}>{currentUserName}</h4>
+              <p style={{ fontSize: '11px', margin: 0 }}>{currentUserRole} RT 007</p>
+            </div>
           </div>
-          <div className="info">
-            <h4>H. Bambang Sugiarto</h4>
-            <p>Ketua RT 007 / RW 030</p>
-          </div>
+          {onLogout && (
+            <button
+              onClick={() => { onClose(); onLogout(); }}
+              title="Keluar"
+              style={{
+                background: '#fee2e2',
+                color: '#dc2626',
+                padding: '6px 10px',
+                borderRadius: '6px',
+                fontSize: '11px',
+                fontWeight: 700,
+                border: '1px solid #fecaca',
+                cursor: 'pointer'
+              }}
+            >
+              Keluar
+            </button>
+          )}
         </div>
       </aside>
     </>
