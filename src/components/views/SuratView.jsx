@@ -78,28 +78,12 @@ export default function SuratView({
     });
   };
 
+  if (currentUserRole === 'Bendahara') {
+    return null;
+  }
+
   return (
     <div className="surat-page">
-      {/* Notice jika login sebagai Bendahara */}
-      {isBendahara && (
-        <div style={{
-          background: '#fffbeb',
-          border: '1px solid #fde68a',
-          borderRadius: '12px',
-          padding: '12px 18px',
-          marginBottom: '18px',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '12px',
-          color: '#92400e'
-        }}>
-          <AlertCircle size={20} color="#d97706" />
-          <div style={{ fontSize: '13px' }}>
-            <strong>Akses Dibatasi (Role Bendahara):</strong> Bendahara tidak diberikan akses untuk pengajuan, pembuatan, atau persetujuan surat pengantar warga. Layanan administrasi surat dikelola penuh oleh <strong>Ketua RT</strong> dan <strong>Sekretaris</strong>.
-          </div>
-        </div>
-      )}
-
       {/* Submenu Tabs & Action Header */}
       <div style={{
         display: 'flex',
@@ -151,8 +135,8 @@ export default function SuratView({
           </button>
         </div>
 
-        {/* Tombol Buat Surat hanya tampil untuk Ketua RT dan Sekretaris (Bukan Bendahara) */}
-        {canPengajuanSurat ? (
+        {/* Tombol Buat Surat */}
+        {canPengajuanSurat && (
           <button 
             onClick={() => setShowAddSuratModal(true)}
             style={{
@@ -170,18 +154,6 @@ export default function SuratView({
           >
             <Plus size={18} /> Buat Permohonan Surat Baru
           </button>
-        ) : (
-          <div style={{
-            fontSize: '12px',
-            color: '#dc2626',
-            background: '#fee2e2',
-            padding: '8px 14px',
-            borderRadius: '8px',
-            fontWeight: 700,
-            border: '1px solid #fca5a5'
-          }}>
-            ✕ Akses Pengajuan Surat Tidak Tersedia untuk Bendahara
-          </div>
         )}
       </div>
 

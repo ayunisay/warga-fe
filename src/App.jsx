@@ -23,6 +23,13 @@ export default function App() {
   const [transactions, setTransactions] = useState(INITIAL_TRANSACTIONS);
   const [users, setUsers] = useState(INITIAL_USERS);
   const [currentUserRole, setCurrentUserRole] = useState('Ketua RT');
+
+  // Bila role diubah ke Bendahara dan menu sedang di surat, alihkan ke dashboard
+  React.useEffect(() => {
+    if (currentUserRole === 'Bendahara' && activeMenu === 'surat') {
+      setActiveMenu('dashboard');
+    }
+  }, [currentUserRole, activeMenu]);
   
   // Modals
   const [selectedSuratForPrint, setSelectedSuratForPrint] = useState(null);
@@ -47,6 +54,9 @@ export default function App() {
   };
 
   const handleSelectMenu = (menu) => {
+    if (currentUserRole === 'Bendahara' && menu === 'surat') {
+      return;
+    }
     setActiveMenu(menu);
     if (menu === 'warga') setActiveSubMenu('master');
     if (menu === 'keuangan') setActiveSubMenu('rekap');
@@ -54,6 +64,9 @@ export default function App() {
   };
 
   const handleSelectSubMenu = (menu, subMenu) => {
+    if (currentUserRole === 'Bendahara' && menu === 'surat') {
+      return;
+    }
     setActiveMenu(menu);
     setActiveSubMenu(subMenu);
   };
@@ -129,6 +142,7 @@ export default function App() {
         activeSubMenu={activeSubMenu}
         onSelectMenu={handleSelectMenu}
         onSelectSubMenu={handleSelectSubMenu}
+        currentUserRole={currentUserRole}
       />
 
       {/* 3. Main Content Body */}
@@ -175,7 +189,7 @@ export default function App() {
             />
           )}
 
-          {activeMenu === 'surat' && (
+          {activeMenu === 'surat' && currentUserRole !== 'Bendahara' && (
             <SuratView 
               suratList={suratList}
               activeSubMenu={activeSubMenu}

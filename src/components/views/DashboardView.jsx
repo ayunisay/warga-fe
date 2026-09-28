@@ -92,38 +92,72 @@ export default function DashboardView({
           </div>
         </div>
 
-        {/* Card 4: Permohonan Surat */}
-        <div 
-          className="yellow-card" 
-          onClick={() => onNavigate('surat', 'masuk')}
-          style={{ cursor: 'pointer' }}
-        >
-          <div className="card-top-row">
-            <span className="card-label">Permohonan Surat Aktif</span>
-            <div className="card-icon-pill" style={{ background: pendingSurat.length > 0 ? '#ffedd5' : 'rgba(255,255,255,0.5)' }}>
-              <FileText size={22} color={pendingSurat.length > 0 ? '#c2410c' : '#1c1401'} />
+        {/* Card 4: Permohonan Surat (untuk Ketua RT & Sekretaris) ATAU Status Iuran (untuk Bendahara) */}
+        {currentUserRole !== 'Bendahara' ? (
+          <div 
+            className="yellow-card" 
+            onClick={() => onNavigate('surat', 'masuk')}
+            style={{ cursor: 'pointer' }}
+          >
+            <div className="card-top-row">
+              <span className="card-label">Permohonan Surat Aktif</span>
+              <div className="card-icon-pill" style={{ background: pendingSurat.length > 0 ? '#ffedd5' : 'rgba(255,255,255,0.5)' }}>
+                <FileText size={22} color={pendingSurat.length > 0 ? '#c2410c' : '#1c1401'} />
+              </div>
+            </div>
+            <div>
+              <div className="card-value">
+                {suratList.length} <span style={{ fontSize: '18px', fontWeight: 600 }}>Berkas</span>
+              </div>
+              <div className="card-subtext" style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                <span style={{ 
+                  background: '#ea580c', 
+                  color: '#fff', 
+                  padding: '2px 8px', 
+                  borderRadius: '6px', 
+                  fontWeight: 700, 
+                  fontSize: '11px' 
+                }}>
+                  {pendingSurat.length} Perlu Verifikasi
+                </span>
+                <span>•</span>
+                <span>6 Surat Selesai Diterbitkan</span>
+              </div>
             </div>
           </div>
-          <div>
-            <div className="card-value">
-              {suratList.length} <span style={{ fontSize: '18px', fontWeight: 600 }}>Berkas</span>
+        ) : (
+          <div 
+            className="yellow-card" 
+            onClick={() => onNavigate('keuangan', 'iuran')}
+            style={{ cursor: 'pointer' }}
+          >
+            <div className="card-top-row">
+              <span className="card-label">Status Iuran Warga</span>
+              <div className="card-icon-pill" style={{ background: '#dcfce7' }}>
+                <CheckCircle2 size={22} color="#15803d" />
+              </div>
             </div>
-            <div className="card-subtext" style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-              <span style={{ 
-                background: '#ea580c', 
-                color: '#fff', 
-                padding: '2px 8px', 
-                borderRadius: '6px', 
-                fontWeight: 700, 
-                fontSize: '11px' 
-              }}>
-                {pendingSurat.length} Perlu Verifikasi
-              </span>
-              <span>•</span>
-              <span>6 Surat Selesai Diterbitkan</span>
+            <div>
+              <div className="card-value">
+                138 / 142 <span style={{ fontSize: '18px', fontWeight: 600 }}>KK Lunas</span>
+              </div>
+              <div className="card-subtext" style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                <span style={{ 
+                  background: '#dc2626', 
+                  color: '#fff', 
+                  padding: '2px 8px', 
+                  borderRadius: '6px', 
+                  fontWeight: 700, 
+                  fontSize: '11px' 
+                }}>
+                  4 KK Menunggak
+                </span>
+                <span>•</span>
+                <span style={{ color: '#15803d', fontWeight: 700 }}>97.2% Target Terkumpul</span>
+              </div>
             </div>
           </div>
-        </div>
+        )}
       </div>
 
       {/* SECTION 1: YELLOW BIG CARD (Demografi & Distribusi Penduduk) */}
@@ -362,149 +396,278 @@ export default function DashboardView({
         </div>
       </div>
 
-      {/* SECTION 3: RED BIG CARD (Permohonan Surat Masuk & Tindakan Mendesak) */}
+      {/* SECTION 3: RED BIG CARD (Surat Masuk untuk Ketua RT & Sekretaris, ATAU Tagihan Iuran untuk Bendahara) */}
       <div style={{ marginTop: '12px' }}>
-        <div className="section-pill-header section-pill-red">
-          <ShieldAlert size={16} />
-          <span>Perlu Tindakan & Permohonan Surat Masuk Terkini</span>
-        </div>
-
-        <div className="big-section-card big-card-red">
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '16px', marginBottom: '18px' }}>
-            <div>
-              <h3 style={{ fontSize: '20px', fontWeight: 800, color: '#ffffff' }}>
-                Verifikasi Surat & Pengumuman Penting RT
-              </h3>
-              <p style={{ fontSize: '13px', color: '#fee2e2', marginTop: '2px' }}>
-                Ada {pendingSurat.length} surat pengantar warga yang menunggu tanda tangan dan persetujuan Ketua RT
-              </p>
+        {currentUserRole !== 'Bendahara' ? (
+          <>
+            <div className="section-pill-header section-pill-red">
+              <ShieldAlert size={16} />
+              <span>Perlu Tindakan & Permohonan Surat Masuk Terkini</span>
             </div>
-            <button 
-              onClick={() => onNavigate('surat', 'masuk')}
-              style={{
-                background: '#ffffff',
-                color: '#dc2626',
-                padding: '8px 16px',
-                borderRadius: '10px',
-                fontSize: '13px',
-                fontWeight: 700,
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px'
-              }}
-            >
-              Lihat Semua Permohonan ({suratList.length}) <ChevronRight size={16} />
-            </button>
-          </div>
 
-          {/* Cards of Urgent Letters */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px' }}>
-            {suratList.slice(0, 2).map((srt) => (
-              <div 
-                key={srt.id} 
-                style={{
-                  background: 'rgba(255, 255, 255, 0.15)',
-                  backdropFilter: 'blur(6px)',
+            <div className="big-section-card big-card-red">
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '16px', marginBottom: '18px' }}>
+                <div>
+                  <h3 style={{ fontSize: '20px', fontWeight: 800, color: '#ffffff' }}>
+                    Verifikasi Surat & Pengumuman Penting RT
+                  </h3>
+                  <p style={{ fontSize: '13px', color: '#fee2e2', marginTop: '2px' }}>
+                    Ada {pendingSurat.length} surat pengantar warga yang menunggu tanda tangan dan persetujuan Ketua RT
+                  </p>
+                </div>
+                <button 
+                  onClick={() => onNavigate('surat', 'masuk')}
+                  style={{
+                    background: '#ffffff',
+                    color: '#dc2626',
+                    padding: '8px 16px',
+                    borderRadius: '10px',
+                    fontSize: '13px',
+                    fontWeight: 700,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px'
+                  }}
+                >
+                  Lihat Semua Permohonan ({suratList.length}) <ChevronRight size={16} />
+                </button>
+              </div>
+
+              {/* Cards of Urgent Letters */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px' }}>
+                {suratList.slice(0, 2).map((srt) => (
+                  <div 
+                    key={srt.id} 
+                    style={{
+                      background: 'rgba(255, 255, 255, 0.15)',
+                      backdropFilter: 'blur(6px)',
+                      borderRadius: '14px',
+                      padding: '16px 18px',
+                      border: '1px solid rgba(255, 255, 255, 0.25)',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      justifyContent: 'space-between'
+                    }}
+                  >
+                    <div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
+                        <span style={{ 
+                          fontSize: '11px', 
+                          fontWeight: 700, 
+                          background: srt.status === 'Menunggu Verifikasi' ? '#fef08a' : '#bbf7d0',
+                          color: srt.status === 'Menunggu Verifikasi' ? '#854d0e' : '#166534',
+                          padding: '3px 8px', 
+                          borderRadius: '6px' 
+                        }}>
+                          {srt.status}
+                        </span>
+                        <span style={{ fontSize: '11px', color: '#fee2e2' }}>{srt.tanggalPengajuan}</span>
+                      </div>
+
+                      <h4 style={{ fontSize: '15px', fontWeight: 800, color: '#ffffff', marginBottom: '4px' }}>
+                        {srt.jenisSurat}
+                      </h4>
+                      <div style={{ fontSize: '13px', color: '#fef2f2', fontWeight: 600 }}>
+                        👤 {srt.pemohon} ({srt.alamat})
+                      </div>
+                      <p style={{ fontSize: '12px', color: '#fecaca', marginTop: '6px', lineHeight: 1.4 }}>
+                        Keperluan: {srt.tujuan}
+                      </p>
+                    </div>
+
+                    <div style={{ display: 'flex', gap: '8px', marginTop: '16px' }}>
+                      <button 
+                        onClick={() => onOpenSuratModal(srt)}
+                        style={{
+                          flex: 1,
+                          background: '#ffffff',
+                          color: '#b91c1c',
+                          padding: '8px 12px',
+                          borderRadius: '8px',
+                          fontSize: '12.5px',
+                          fontWeight: 700,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: '6px'
+                        }}
+                      >
+                        <Printer size={15} /> Pratinjau Surat
+                      </button>
+                      {srt.status === 'Menunggu Verifikasi' && (
+                        <button 
+                          onClick={() => onApproveSurat(srt.id)}
+                          style={{
+                            background: '#15803d',
+                            color: '#ffffff',
+                            padding: '8px 12px',
+                            borderRadius: '8px',
+                            fontSize: '12.5px',
+                            fontWeight: 700,
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '6px'
+                          }}
+                          title="Setujui dan beri stempel RT"
+                        >
+                          <CheckCircle2 size={15} /> Setujui
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                ))}
+
+                {/* Announcement / Alert Note */}
+                <div style={{
+                  background: 'rgba(0, 0, 0, 0.2)',
                   borderRadius: '14px',
                   padding: '16px 18px',
-                  border: '1px solid rgba(255, 255, 255, 0.25)',
+                  border: '1px solid rgba(255, 255, 255, 0.15)',
                   display: 'flex',
                   flexDirection: 'column',
                   justifyContent: 'space-between'
-                }}
-              >
-                <div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
-                    <span style={{ 
-                      fontSize: '11px', 
-                      fontWeight: 700, 
-                      background: srt.status === 'Menunggu Verifikasi' ? '#fef08a' : '#bbf7d0',
-                      color: srt.status === 'Menunggu Verifikasi' ? '#854d0e' : '#166534',
-                      padding: '3px 8px',
-                      borderRadius: '6px'
-                    }}>
-                      {srt.status}
-                    </span>
-                    <span style={{ fontSize: '11px', color: '#fee2e2' }}>{srt.tanggalPengajuan}</span>
+                }}>
+                  <div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#fef08a', fontSize: '13px', fontWeight: 700, marginBottom: '6px' }}>
+                      📢 Agenda Kerja Bakti & Posyandu
+                    </div>
+                    <p style={{ fontSize: '12.5px', color: '#fef2f2', lineHeight: 1.5 }}>
+                      Kerja bakti pembersihan saluran air drainase menghadapi musim hujan akan dilaksanakan pada hari Minggu pagi, 29 Maret 2026 di Lapangan RT 007.
+                    </p>
                   </div>
-
-                  <h4 style={{ fontSize: '15px', fontWeight: 800, color: '#ffffff', marginBottom: '4px' }}>
-                    {srt.jenisSurat}
-                  </h4>
-                  <div style={{ fontSize: '13px', color: '#fef2f2', fontWeight: 600 }}>
-                    👤 {srt.pemohon} ({srt.alamat})
+                  <div style={{ fontSize: '11px', color: '#fecaca', marginTop: '10px' }}>
+                    Koordinator: Sie Keamanan & Lingkungan Hidup
                   </div>
-                  <p style={{ fontSize: '12px', color: '#fecaca', marginTop: '6px', lineHeight: 1.4 }}>
-                    Keperluan: {srt.tujuan}
-                  </p>
                 </div>
-
-                <div style={{ display: 'flex', gap: '8px', marginTop: '16px' }}>
-                  <button 
-                    onClick={() => onOpenSuratModal(srt)}
-                    style={{
-                      flex: 1,
-                      background: '#ffffff',
-                      color: '#b91c1c',
-                      padding: '8px 12px',
-                      borderRadius: '8px',
-                      fontSize: '12.5px',
-                      fontWeight: 700,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: '6px'
-                    }}
-                  >
-                    <Printer size={15} /> Pratinjau Surat
-                  </button>
-                  {currentUserRole !== 'Bendahara' && srt.status === 'Menunggu Verifikasi' && (
-                    <button 
-                      onClick={() => onApproveSurat(srt.id)}
-                      style={{
-                        background: '#15803d',
-                        color: '#ffffff',
-                        padding: '8px 12px',
-                        borderRadius: '8px',
-                        fontSize: '12.5px',
-                        fontWeight: 700,
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '6px'
-                      }}
-                      title="Setujui dan beri stempel RT"
-                    >
-                      <CheckCircle2 size={15} /> Setujui
-                    </button>
-                  )}
-                </div>
-              </div>
-            ))}
-
-            {/* Announcement / Alert Note */}
-            <div style={{
-              background: 'rgba(0, 0, 0, 0.2)',
-              borderRadius: '14px',
-              padding: '16px 18px',
-              border: '1px solid rgba(255, 255, 255, 0.15)',
-              display: 'flex',
-              flexDirection: 'column',
-              justifyContent: 'space-between'
-            }}>
-              <div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#fef08a', fontSize: '13px', fontWeight: 700, marginBottom: '6px' }}>
-                  📢 Agenda Kerja Bakti & Posyandu
-                </div>
-                <p style={{ fontSize: '12.5px', color: '#fef2f2', lineHeight: 1.5 }}>
-                  Kerja bakti pembersihan saluran air drainase menghadapi musim hujan akan dilaksanakan pada hari Minggu pagi, 29 Maret 2026 di Lapangan RT 007.
-                </p>
-              </div>
-              <div style={{ fontSize: '11px', color: '#fecaca', marginTop: '10px' }}>
-                Koordinator: Sie Keamanan & Lingkungan Hidup
               </div>
             </div>
-          </div>
-        </div>
+          </>
+        ) : (
+          <>
+            <div className="section-pill-header section-pill-red">
+              <ShieldAlert size={16} />
+              <span>Perlu Tindakan & Penagihan Iuran Warga</span>
+            </div>
+
+            <div className="big-section-card big-card-red">
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '16px', marginBottom: '18px' }}>
+                <div>
+                  <h3 style={{ fontSize: '20px', fontWeight: 800, color: '#ffffff' }}>
+                    Monitoring Iuran & Tunggakan Kas RT
+                  </h3>
+                  <p style={{ fontSize: '13px', color: '#fee2e2', marginTop: '2px' }}>
+                    Terdapat Kepala Keluarga yang belum menyelesaikan iuran kebersihan & keamanan bulan berjalan
+                  </p>
+                </div>
+                <button 
+                  onClick={() => onNavigate('keuangan', 'iuran')}
+                  style={{
+                    background: '#ffffff',
+                    color: '#dc2626',
+                    padding: '8px 16px',
+                    borderRadius: '10px',
+                    fontSize: '13px',
+                    fontWeight: 700,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px'
+                  }}
+                >
+                  Buka Catatan Iuran <ChevronRight size={16} />
+                </button>
+              </div>
+
+              {/* Cards of Unpaid KK for Bendahara */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px' }}>
+                {citizens.filter(c => c.statusIuran === 'Menunggak').slice(0, 2).map((warga) => (
+                  <div 
+                    key={warga.id} 
+                    style={{
+                      background: 'rgba(255, 255, 255, 0.15)',
+                      backdropFilter: 'blur(6px)',
+                      borderRadius: '14px',
+                      padding: '16px 18px',
+                      border: '1px solid rgba(255, 255, 255, 0.25)',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      justifyContent: 'space-between'
+                    }}
+                  >
+                    <div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
+                        <span style={{ 
+                          fontSize: '11px', 
+                          fontWeight: 700, 
+                          background: '#fef08a', 
+                          color: '#854d0e',
+                          padding: '3px 8px', 
+                          borderRadius: '6px' 
+                        }}>
+                          Menunggak Iuran
+                        </span>
+                        <span style={{ fontSize: '12px', color: '#fee2e2', fontWeight: 700 }}>Rp 60.000 / bln</span>
+                      </div>
+
+                      <h4 style={{ fontSize: '15px', fontWeight: 800, color: '#ffffff', marginBottom: '4px' }}>
+                        {warga.nama}
+                      </h4>
+                      <div style={{ fontSize: '13px', color: '#fef2f2', fontWeight: 600 }}>
+                        🏠 {warga.alamat}
+                      </div>
+                      <p style={{ fontSize: '12px', color: '#fecaca', marginTop: '6px' }}>
+                        No. KK: {warga.noKk} • Periode: Maret 2026
+                      </p>
+                    </div>
+
+                    <div style={{ display: 'flex', gap: '8px', marginTop: '16px' }}>
+                      <button 
+                        onClick={() => onNavigate('keuangan', 'iuran')}
+                        style={{
+                          flex: 1,
+                          background: '#ffffff',
+                          color: '#b91c1c',
+                          padding: '8px 12px',
+                          borderRadius: '8px',
+                          fontSize: '12.5px',
+                          fontWeight: 700,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: '6px'
+                        }}
+                      >
+                        Konfirmasi Pembayaran Iuran
+                      </button>
+                    </div>
+                  </div>
+                ))}
+
+                {/* Announcement / Alert Note for Bendahara */}
+                <div style={{
+                  background: 'rgba(0, 0, 0, 0.2)',
+                  borderRadius: '14px',
+                  padding: '16px 18px',
+                  border: '1px solid rgba(255, 255, 255, 0.15)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'space-between'
+                }}>
+                  <div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#fef08a', fontSize: '13px', fontWeight: 700, marginBottom: '6px' }}>
+                      📢 Target Rekap Kas RT
+                    </div>
+                    <p style={{ fontSize: '12.5px', color: '#fef2f2', lineHeight: 1.5 }}>
+                      Rekapitulasi penerimaan iuran bulanan warga ditutup tiap akhir bulan untuk pelaporan ke pengurus RW 030 Teluk Pucung.
+                    </p>
+                  </div>
+                  <div style={{ fontSize: '11px', color: '#fecaca', marginTop: '10px' }}>
+                    Wewenang: Bendahara RT 007
+                  </div>
+                </div>
+              </div>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );

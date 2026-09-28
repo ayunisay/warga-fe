@@ -7,7 +7,8 @@ export default function SidebarDrawer({
   activeMenu, 
   activeSubMenu, 
   onSelectMenu, 
-  onSelectSubMenu 
+  onSelectSubMenu,
+  currentUserRole = 'Ketua RT'
 }) {
   // State dropdown terbuka / tertutup per kategori menu
   const [openDropdowns, setOpenDropdowns] = useState({
@@ -158,46 +159,48 @@ export default function SidebarDrawer({
             )}
           </div>
 
-          {/* 4. Pelayanan Surat / Administrasi (Dropdown Accordion) */}
-          <div>
-            <div 
-              className={`nav-section-title ${activeMenu === 'surat' ? 'active' : ''}`}
-              onClick={() => handleToggle('surat')}
-              title="Klik untuk buka / tutup sub-menu Pelayanan Surat"
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <FileText size={18} />
-                <span>Pelayanan Surat / Administrasi</span>
+          {/* 4. Pelayanan Surat / Administrasi (Dropdown Accordion - Khusus Ketua RT & Sekretaris) */}
+          {currentUserRole !== 'Bendahara' && (
+            <div>
+              <div 
+                className={`nav-section-title ${activeMenu === 'surat' ? 'active' : ''}`}
+                onClick={() => handleToggle('surat')}
+                title="Klik untuk buka / tutup sub-menu Pelayanan Surat"
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <FileText size={18} />
+                  <span>Pelayanan Surat / Administrasi</span>
+                </div>
+                <ChevronRight 
+                  size={16} 
+                  style={{ 
+                    transition: 'transform 0.25s ease',
+                    transform: openDropdowns.surat ? 'rotate(90deg)' : 'rotate(0deg)'
+                  }} 
+                />
               </div>
-              <ChevronRight 
-                size={16} 
-                style={{ 
-                  transition: 'transform 0.25s ease',
-                  transform: openDropdowns.surat ? 'rotate(90deg)' : 'rotate(0deg)'
-                }} 
-              />
-            </div>
 
-            {openDropdowns.surat && (
-              <ul className="nav-sub-list">
-                <li className={`nav-sub-item ${activeMenu === 'surat' && activeSubMenu === 'masuk' ? 'active' : ''}`}>
-                  <button onClick={() => { onSelectSubMenu('surat', 'masuk'); onClose(); }}>
-                    • Permohonan Surat Masuk & Verifikasi
-                  </button>
-                </li>
-                <li className={`nav-sub-item ${activeMenu === 'surat' && activeSubMenu === 'buat' ? 'active' : ''}`}>
-                  <button onClick={() => { onSelectSubMenu('surat', 'buat'); onClose(); }}>
-                    • Pembuatan & Cetak/Export PDF Surat Otomatis
-                  </button>
-                </li>
-                <li className={`nav-sub-item ${activeMenu === 'surat' && activeSubMenu === 'arsip' ? 'active' : ''}`}>
-                  <button onClick={() => { onSelectSubMenu('surat', 'arsip'); onClose(); }}>
-                    • Arsip / Riwayat Surat Keluar
-                  </button>
-                </li>
-              </ul>
-            )}
-          </div>
+              {openDropdowns.surat && (
+                <ul className="nav-sub-list">
+                  <li className={`nav-sub-item ${activeMenu === 'surat' && activeSubMenu === 'masuk' ? 'active' : ''}`}>
+                    <button onClick={() => { onSelectSubMenu('surat', 'masuk'); onClose(); }}>
+                      • Permohonan Surat Masuk & Verifikasi
+                    </button>
+                  </li>
+                  <li className={`nav-sub-item ${activeMenu === 'surat' && activeSubMenu === 'buat' ? 'active' : ''}`}>
+                    <button onClick={() => { onSelectSubMenu('surat', 'buat'); onClose(); }}>
+                      • Pembuatan & Cetak/Export PDF Surat Otomatis
+                    </button>
+                  </li>
+                  <li className={`nav-sub-item ${activeMenu === 'surat' && activeSubMenu === 'arsip' ? 'active' : ''}`}>
+                    <button onClick={() => { onSelectSubMenu('surat', 'arsip'); onClose(); }}>
+                      • Arsip / Riwayat Surat Keluar
+                    </button>
+                  </li>
+                </ul>
+              )}
+            </div>
+          )}
 
           {/* 5. Manajemen Pengguna / User Settings */}
           <div 
