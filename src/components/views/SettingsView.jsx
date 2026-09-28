@@ -34,7 +34,7 @@ export default function SettingsView({
   const [newUserForm, setNewUserForm] = useState({
     nama: '',
     jabatan: '',
-    role: 'Warga',
+    role: 'Petugas Lapangan',
     email: '',
     telp: '',
     status: 'Aktif'
@@ -82,7 +82,7 @@ export default function SettingsView({
     setNewUserForm({
       nama: '',
       jabatan: '',
-      role: 'Warga',
+      role: 'Petugas Lapangan',
       email: '',
       telp: '',
       status: 'Aktif'
@@ -94,7 +94,6 @@ export default function SettingsView({
     { value: 'Sekretaris (Administrator)', desc: 'Kelola Surat Pengantar, Data Warga, & Edit Role Pengguna' },
     { value: 'Bendahara (Keuangan)', desc: 'Kelola Kas Masuk, Kas Keluar, & Status Iuran Warga' },
     { value: 'Petugas Lapangan', desc: 'Monitoring Jadwal Ronda, Keamanan, & Sarana Prasarana' },
-    { value: 'Warga', desc: 'Akses mandiri untuk pengajuan surat & monitoring iuran keluarga' },
   ];
 
   return (
@@ -154,7 +153,7 @@ export default function SettingsView({
             <option value="Ketua RT (Superadmin)">Ketua RT (Superadmin) - Punya Akses Edit</option>
             <option value="Sekretaris (Administrator)">Sekretaris (Administrator) - Punya Akses Edit</option>
             <option value="Bendahara (Keuangan)">Bendahara (Keuangan) - Tanpa Akses Edit User</option>
-            <option value="Warga">Warga Biasa - Tanpa Akses Edit User</option>
+            <option value="Petugas Lapangan">Petugas Lapangan - Tanpa Akses Edit User</option>
           </select>
         </div>
       </div>
@@ -439,18 +438,11 @@ export default function SettingsView({
                   <td style={{ textAlign: 'center', color: '#94a3b8' }}>-</td>
                   <td style={{ textAlign: 'center', color: '#dc2626' }}>✕ Tidak Bisa</td>
                 </tr>
-                <tr style={{ borderBottom: '1px solid #f1f5f9' }}>
+                <tr>
                   <td style={{ padding: '12px 16px', fontWeight: 700 }}>Petugas Lapangan</td>
                   <td style={{ textAlign: 'center', color: '#64748b' }}>Lihat Alamat</td>
                   <td style={{ textAlign: 'center', color: '#94a3b8' }}>-</td>
                   <td style={{ textAlign: 'center', color: '#94a3b8' }}>-</td>
-                  <td style={{ textAlign: 'center', color: '#dc2626' }}>✕ Tidak Bisa</td>
-                </tr>
-                <tr>
-                  <td style={{ padding: '12px 16px', fontWeight: 700 }}>Warga Biasa</td>
-                  <td style={{ textAlign: 'center', color: '#94a3b8' }}>Profil Sendiri</td>
-                  <td style={{ textAlign: 'center', color: '#64748b' }}>Cek Tagihan</td>
-                  <td style={{ textAlign: 'center', color: '#16a34a', fontWeight: 700 }}>Pengajuan Surat</td>
                   <td style={{ textAlign: 'center', color: '#dc2626' }}>✕ Tidak Bisa</td>
                 </tr>
               </tbody>

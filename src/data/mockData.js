@@ -429,13 +429,13 @@ export const INITIAL_USERS = [
   },
   {
     id: 5,
-    nama: "Siti Rahmawati",
-    jabatan: "Warga / Sie Konsumsi",
-    role: "Warga",
-    email: "siti.rahmawati@gmail.com",
-    telp: "0819-0821-3322",
+    nama: "H. Supriyadi",
+    jabatan: "Koordinator Sie Sarpras & Fasum",
+    role: "Petugas Lapangan",
+    email: "sarpras.rt007@gmail.com",
+    telp: "0877-3344-5566",
     status: "Aktif",
-    avatarInitial: "SR",
+    avatarInitial: "SY",
   }
 ];
 
