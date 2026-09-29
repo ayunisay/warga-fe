@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { 
   FileText, CheckCircle2, Clock, Printer, Plus, 
-  Search, Eye, ShieldCheck, AlertCircle, XCircle, X
+  Search, Eye, EyeOff, ShieldCheck, AlertCircle, XCircle, X
 } from 'lucide-react';
+import { maskNik } from '../../utils/privacyUtils';
 
 export default function SuratView({ 
   suratList, 
@@ -18,6 +19,7 @@ export default function SuratView({
   const [showAddSuratModal, setShowAddSuratModal] = useState(false);
   const [rejectingSurat, setRejectingSurat] = useState(null);
   const [rejectReason, setRejectReason] = useState('');
+  const [isSuratNikMasked, setIsSuratNikMasked] = useState(true);
   const [formData, setFormData] = useState({
     jenisSurat: 'Surat Pengantar SKCK (Catatan Kepolisian)',
     pemohon: '',
@@ -227,9 +229,18 @@ export default function SuratView({
                   {srt.jenisSurat}
                 </h3>
 
-                <div style={{ fontSize: '13.5px', color: '#e2e8f0', marginTop: '6px', display: 'flex', flexWrap: 'wrap', gap: '14px' }}>
+                <div style={{ fontSize: '13.5px', color: '#e2e8f0', marginTop: '6px', display: 'flex', flexWrap: 'wrap', gap: '14px', alignItems: 'center' }}>
                   <span>👤 <strong>Pemohon:</strong> {srt.pemohon}</span>
-                  <span>📄 <strong>NIK:</strong> {srt.nik}</span>
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                    📄 <strong>NIK:</strong> <span style={{ fontFamily: 'monospace' }}>{isSuratNikMasked ? (srt.nikMasked || maskNik(srt.nik)) : srt.nik}</span>
+                    <button
+                      onClick={() => setIsSuratNikMasked(!isSuratNikMasked)}
+                      style={{ background: 'none', border: 'none', color: '#38bdf8', cursor: 'pointer', padding: '0 2px', display: 'inline-flex', alignItems: 'center' }}
+                      title={isSuratNikMasked ? "Buka sensor NIK (UU PDP)" : "Sensor kembali"}
+                    >
+                      {isSuratNikMasked ? <Eye size={13} /> : <EyeOff size={13} />}
+                    </button>
+                  </span>
                   <span>🏠 <strong>Alamat:</strong> {srt.alamat}</span>
                 </div>
 

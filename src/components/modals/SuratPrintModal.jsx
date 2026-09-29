@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
-import { Printer, X, CheckCircle, FileText, XCircle, AlertCircle } from 'lucide-react';
+import { Printer, X, CheckCircle, FileText, XCircle, AlertCircle, ShieldCheck } from 'lucide-react';
 import { RT_INFO } from '../../data/mockData';
+import { maskNik } from '../../utils/privacyUtils';
 
 export default function SuratPrintModal({ surat, onClose, onApprove, onReject }) {
   const [showRejectForm, setShowRejectForm] = useState(false);
   const [rejectReason, setRejectReason] = useState('');
+  const [maskNikInPrint, setMaskNikInPrint] = useState(false);
 
   if (!surat) return null;
 
@@ -92,6 +94,26 @@ export default function SuratPrintModal({ surat, onClose, onApprove, onReject })
                 )}
               </>
             )}
+            <label style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              fontSize: '12px',
+              color: '#334155',
+              cursor: 'pointer',
+              background: '#ffffff',
+              padding: '6px 10px',
+              borderRadius: '8px',
+              border: '1px solid #cbd5e1',
+              userSelect: 'none'
+            }}>
+              <input 
+                type="checkbox" 
+                checked={maskNikInPrint} 
+                onChange={(e) => setMaskNikInPrint(e.target.checked)} 
+              />
+              <ShieldCheck size={14} color="#16a34a" /> Sensor NIK (UU PDP)
+            </label>
             <button 
               onClick={handlePrint}
               style={{
@@ -284,7 +306,7 @@ export default function SuratPrintModal({ surat, onClose, onApprove, onReject })
                 <tr>
                   <td style={{ padding: '3px 0' }}>NIK (No. KTP)</td>
                   <td>:</td>
-                  <td>{surat.nik}</td>
+                  <td style={{ fontFamily: 'monospace' }}>{maskNikInPrint ? (surat.nikMasked || maskNik(surat.nik)) : surat.nik}</td>
                 </tr>
                 <tr>
                   <td style={{ padding: '3px 0' }}>Alamat / Blok</td>

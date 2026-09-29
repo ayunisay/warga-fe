@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { 
   Wallet, ArrowDownRight, ArrowUpRight, Plus, 
   Calendar, FileSpreadsheet, CheckCircle2, Clock, Filter,
-  Eye, XCircle, Check, AlertCircle, X, ShieldCheck, CreditCard, ExternalLink, QrCode, Search
+  Eye, XCircle, Check, AlertCircle, X, ShieldCheck, CreditCard, ExternalLink, QrCode, Search, Zap
 } from 'lucide-react';
 
 export default function KeuanganView({ 
@@ -404,36 +404,70 @@ export default function KeuanganView({
                         </td>
 
                         <td style={{ padding: '12px 14px', textAlign: 'center' }}>
-                          <button
-                            onClick={() => setSelectedProof(item)}
-                            style={{
-                              background: '#0284c7',
-                              color: '#ffffff',
-                              padding: '6px 12px',
+                          {item.metode?.includes('Gateway') || item.catatanBendahara?.includes('Webhook') ? (
+                            <span style={{
+                              background: 'rgba(2, 132, 199, 0.2)',
+                              color: '#38bdf8',
+                              border: '1px solid rgba(56, 189, 248, 0.3)',
+                              padding: '5px 10px',
                               borderRadius: '6px',
-                              fontSize: '11.5px',
-                              fontWeight: 700,
+                              fontSize: '11px',
+                              fontWeight: 800,
                               display: 'inline-flex',
                               alignItems: 'center',
-                              gap: '5px',
-                              cursor: 'pointer'
-                            }}
-                          >
-                            <Eye size={13} /> Lihat Bukti
-                          </button>
+                              gap: '4px'
+                            }}>
+                              <Zap size={12} fill="#38bdf8" /> Gateway Auto
+                            </span>
+                          ) : (
+                            <button
+                              onClick={() => setSelectedProof(item)}
+                              style={{
+                                background: '#0284c7',
+                                color: '#ffffff',
+                                padding: '6px 12px',
+                                borderRadius: '6px',
+                                fontSize: '11.5px',
+                                fontWeight: 700,
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '5px',
+                                cursor: 'pointer'
+                              }}
+                            >
+                              <Eye size={13} /> Lihat Bukti
+                            </button>
+                          )}
                         </td>
 
                         <td style={{ padding: '12px 14px' }}>
-                          <span style={{
-                            padding: '3px 8px',
-                            borderRadius: '6px',
-                            fontSize: '11px',
-                            fontWeight: 700,
-                            background: item.status === 'Menunggu Verifikasi' ? 'rgba(245, 158, 11, 0.2)' : item.status === 'Terverifikasi' ? 'rgba(34, 197, 94, 0.2)' : 'rgba(239, 68, 68, 0.2)',
-                            color: item.status === 'Menunggu Verifikasi' ? '#fbbf24' : item.status === 'Terverifikasi' ? '#4ade80' : '#f87171'
-                          }}>
-                            {item.status}
-                          </span>
+                          {item.metode?.includes('Gateway') || item.catatanBendahara?.includes('Webhook') ? (
+                            <span style={{
+                              padding: '3px 8px',
+                              borderRadius: '6px',
+                              fontSize: '11px',
+                              fontWeight: 800,
+                              background: 'rgba(56, 189, 248, 0.2)',
+                              color: '#38bdf8',
+                              border: '1px solid rgba(56, 189, 248, 0.3)',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '4px'
+                            }}>
+                              <Zap size={11} fill="#38bdf8" /> Terverifikasi Gateway
+                            </span>
+                          ) : (
+                            <span style={{
+                              padding: '3px 8px',
+                              borderRadius: '6px',
+                              fontSize: '11px',
+                              fontWeight: 700,
+                              background: item.status === 'Menunggu Verifikasi' ? 'rgba(245, 158, 11, 0.2)' : item.status === 'Terverifikasi' ? 'rgba(34, 197, 94, 0.2)' : 'rgba(239, 68, 68, 0.2)',
+                              color: item.status === 'Menunggu Verifikasi' ? '#fbbf24' : item.status === 'Terverifikasi' ? '#4ade80' : '#f87171'
+                            }}>
+                              {item.status}
+                            </span>
+                          )}
                           {item.catatanBendahara && (
                             <div style={{ fontSize: '10.5px', color: '#cbd5e1', marginTop: '4px', maxWidth: '160px' }}>
                               Note: {item.catatanBendahara}
@@ -442,7 +476,11 @@ export default function KeuanganView({
                         </td>
 
                         <td style={{ padding: '12px 14px', textAlign: 'center' }}>
-                          {item.status === 'Menunggu Verifikasi' ? (
+                          {item.metode?.includes('Gateway') || item.catatanBendahara?.includes('Webhook') ? (
+                            <span style={{ fontSize: '11.5px', color: '#4ade80', fontWeight: 700 }}>
+                              ✓ Auto Settlement (Kas)
+                            </span>
+                          ) : item.status === 'Menunggu Verifikasi' ? (
                             <div style={{ display: 'flex', gap: '6px', justifyContent: 'center' }}>
                               <button
                                 onClick={() => {

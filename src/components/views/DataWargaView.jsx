@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { 
   Users, UserCheck, Home, Baby, UserPlus, Search, Filter, 
-  Calendar, RotateCcw, Eye, Trash2, Edit3, MapPin, Phone, ShieldCheck 
+  Calendar, RotateCcw, Eye, EyeOff, Trash2, Edit3, MapPin, Phone, ShieldCheck, Lock 
 } from 'lucide-react';
 import { DEMOGRAFI_DATA } from '../../data/mockData';
+import { maskNik, maskKk, maskPhone } from '../../utils/privacyUtils';
 
 const NAMA_BULAN = [
   { code: '01', name: 'Januari' },
@@ -31,6 +32,20 @@ export default function DataWargaView({
   const [filterBulan, setFilterBulan] = useState('Semua');
   const [filterTahun, setFilterTahun] = useState('Semua');
   const [selectedCitizen, setSelectedCitizen] = useState(null);
+  
+  // UU PDP No. 27/2022 Data Masking States
+  const [isPrivacyMasked, setIsPrivacyMasked] = useState(true);
+  const [revealedIds, setRevealedIds] = useState(new Set());
+  const [isDetailMasked, setIsDetailMasked] = useState(true);
+
+  const toggleRevealRow = (id) => {
+    setRevealedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
 
   // Quick period presets
   const handleSetPeriod = (bulan, tahun) => {
@@ -402,6 +417,60 @@ export default function DataWargaView({
         </div>
       </div>
 
+      {/* UU PDP Protection Banner */}
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        padding: '12px 18px',
+        background: isPrivacyMasked ? 'linear-gradient(135deg, #f0fdf4 0%, #e0f2fe 100%)' : 'linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%)',
+        borderRadius: '12px',
+        border: isPrivacyMasked ? '1px solid #bbf7d0' : '1px solid #fde68a',
+        marginBottom: '16px',
+        gap: '12px',
+        flexWrap: 'wrap'
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <ShieldCheck size={22} color={isPrivacyMasked ? "#16a34a" : "#d97706"} />
+          <div>
+            <span style={{ fontSize: '13px', fontWeight: 800, color: isPrivacyMasked ? '#166534' : '#92400e', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              {isPrivacyMasked ? '🛡️ Mode Pelindungan Data Pribadi (UU PDP No. 27/2022) Aktif' : '⚠️ Mode Buka Sensor Data Warga Terbuka'}
+              <span style={{ fontSize: '10px', background: isPrivacyMasked ? '#dcfce7' : '#fef3c7', padding: '1px 6px', borderRadius: '4px', border: '1px solid rgba(0,0,0,0.1)' }}>
+                AES-256 At-Rest
+              </span>
+            </span>
+            <p style={{ margin: 0, fontSize: '11.5px', color: '#475569' }}>
+              {isPrivacyMasked 
+                ? 'NIK, No. KK, dan kontak disensor otomatis di layar serta disimpan dengan enkripsi AES-256 di basis data.' 
+                : 'Perhatian: NIK & No. KK ditampilkan lengkap untuk verifikasi administratif pengurus. Jaga kerahasiaan data.'}
+            </p>
+          </div>
+        </div>
+        <button
+          onClick={() => {
+            const nextState = !isPrivacyMasked;
+            setIsPrivacyMasked(nextState);
+            if (nextState) setRevealedIds(new Set());
+          }}
+          style={{
+            padding: '7px 14px',
+            borderRadius: '8px',
+            fontSize: '12px',
+            fontWeight: 700,
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+            background: isPrivacyMasked ? '#16a34a' : '#d97706',
+            color: '#ffffff',
+            border: 'none',
+            cursor: 'pointer',
+            boxShadow: '0 2px 6px rgba(0,0,0,0.1)'
+          }}
+        >
+          {isPrivacyMasked ? <><Eye size={14} /> Buka Sensor (Unmask)</> : <><EyeOff size={14} /> Kunci Kembali (Mask)</>}
+        </button>
+      </div>
+
       {/* Citizen Data Table */}
       <div style={{
         background: '#ffffff',
@@ -452,7 +521,24 @@ export default function DataWargaView({
                   <tr key={c.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
                     <td style={{ padding: '14px 18px' }}>
                       <div style={{ fontWeight: 700, color: '#0f172a', fontSize: '13.5px' }}>{c.nama}</div>
-                      <div style={{ fontSize: '11.5px', color: '#64748b', fontFamily: 'monospace' }}>NIK: {c.nik}</div>
+                      <div style={{ fontSize: '11.5px', color: '#64748b', fontFamily: 'monospace', display: 'flex', alignItems: 'center', gap: '6px', marginTop: '2px' }}>
+                        <span>NIK: {isPrivacyMasked && !revealedIds.has(c.id) ? (c.nikMasked || maskNik(c.nik)) : c.nik}</span>
+                        <button
+                          onClick={() => toggleRevealRow(c.id)}
+                          style={{
+                            background: 'none',
+                            border: 'none',
+                            padding: '0 2px',
+                            cursor: 'pointer',
+                            color: isPrivacyMasked && !revealedIds.has(c.id) ? '#94a3b8' : '#0284c7',
+                            display: 'inline-flex',
+                            alignItems: 'center'
+                          }}
+                          title={isPrivacyMasked && !revealedIds.has(c.id) ? "Buka sensor NIK (UU PDP)" : "Sensor kembali NIK"}
+                        >
+                          {isPrivacyMasked && !revealedIds.has(c.id) ? <Eye size={12} /> : <EyeOff size={12} />}
+                        </button>
+                      </div>
                     </td>
                     <td style={{ padding: '14px 14px', color: '#334155' }}>{c.jenisKelamin}</td>
                     <td style={{ padding: '14px 14px' }}>
@@ -529,12 +615,51 @@ export default function DataWargaView({
           <div className="modal-content-box" style={{ maxWidth: '540px', padding: '24px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', borderBottom: '1px solid #e2e8f0', paddingBottom: '14px', marginBottom: '16px' }}>
               <div>
-                <h3 style={{ fontSize: '18px', fontWeight: 800, color: '#0f172a' }}>{selectedCitizen.nama}</h3>
-                <p style={{ fontSize: '12px', color: '#64748b' }}>NIK: {selectedCitizen.nik} | KK: {selectedCitizen.noKk}</p>
+                <h3 style={{ fontSize: '18px', fontWeight: 800, color: '#0f172a', marginBottom: '4px' }}>{selectedCitizen.nama}</h3>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                  <p style={{ fontSize: '12px', color: '#64748b', margin: 0, fontFamily: 'monospace' }}>
+                    NIK: <strong style={{ color: '#0f172a' }}>{isDetailMasked ? (selectedCitizen.nikMasked || maskNik(selectedCitizen.nik)) : selectedCitizen.nik}</strong> | 
+                    KK: <strong style={{ color: '#0f172a' }}>{isDetailMasked ? (selectedCitizen.noKkMasked || maskKk(selectedCitizen.noKk)) : selectedCitizen.noKk}</strong>
+                  </p>
+                  <button 
+                    onClick={() => setIsDetailMasked(!isDetailMasked)}
+                    style={{
+                      background: isDetailMasked ? '#f1f5f9' : '#e0f2fe',
+                      border: isDetailMasked ? '1px solid #cbd5e1' : '1px solid #38bdf8',
+                      borderRadius: '6px',
+                      padding: '2px 8px',
+                      fontSize: '11px',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                      cursor: 'pointer',
+                      color: isDetailMasked ? '#475569' : '#0284c7',
+                      fontWeight: 600
+                    }}
+                    title="Buka / Sensor data sensitif"
+                  >
+                    {isDetailMasked ? <><Eye size={12} /> Buka Sensor</> : <><EyeOff size={12} /> Kunci Sensor</>}
+                  </button>
+                </div>
+                <div style={{ marginTop: '6px' }}>
+                  <span style={{
+                    fontSize: '10.5px',
+                    padding: '2px 8px',
+                    borderRadius: '4px',
+                    background: '#dcfce7',
+                    color: '#166534',
+                    fontWeight: 700,
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '4px'
+                  }}>
+                    <ShieldCheck size={12} /> Terenkripsi AES-256 At-Rest (UU PDP No. 27/2022)
+                  </span>
+                </div>
               </div>
               <button 
                 onClick={() => setSelectedCitizen(null)}
-                style={{ padding: '6px', borderRadius: '8px', background: '#f1f5f9' }}
+                style={{ padding: '6px', borderRadius: '8px', background: '#f1f5f9', border: 'none', cursor: 'pointer' }}
               >
                 ✕
               </button>
@@ -567,7 +692,9 @@ export default function DataWargaView({
               </div>
               <div>
                 <span style={{ color: '#64748b', fontSize: '11px', display: 'block' }}>KONTAK / HP</span>
-                <span style={{ fontWeight: 600 }}>{selectedCitizen.telepon}</span>
+                <span style={{ fontWeight: 600 }}>
+                  {isDetailMasked ? (selectedCitizen.teleponMasked || maskPhone(selectedCitizen.telepon)) : selectedCitizen.telepon}
+                </span>
               </div>
               <div>
                 <span style={{ color: '#64748b', fontSize: '11px', display: 'block' }}>STATUS TINGGAL</span>

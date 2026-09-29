@@ -177,15 +177,15 @@ Meskipun antarmuka dan interaksi pengguna telah lengkap dan teruji secara fungsi
 
 Untuk mengubah prototipe frontend ini menjadi aplikasi siap pakai di lingkungan RT nyata, langkah-langkah berikut sangat disarankan:
 
-| Area | Tindakan yang Harus Dilakukan | Teknologi yang Direkomendasikan |
-| :--- | :--- | :--- |
-| **Backend API** | Membangun RESTful API atau GraphQL yang menangani seluruh *business logic*, sanitasi input, dan transaksi database. | Node.js (Express / NestJS), Laravel, atau Go (Gin/Fiber). |
-| **Database** | Menggunakan basis data relasional dengan indeks pada NIK, No KK, dan status transaksi. | PostgreSQL atau MySQL / MariaDB. |
-| **Autentikasi Aman** | Menerapkan autentikasi berbasis JWT yang disimpan di cookie `HttpOnly` + `Secure` + `SameSite=Strict`, dilengkapi hashing password `bcrypt` / `argon2`. | Passport.js, Laravel Sanctum, atau Supabase Auth. |
-| **Perlindungan Data (UU PDP)** | Enkripsi kolom sensitif (NIK, KK) di database (*encryption at rest*), serta implementasi *data masking* pada tampilan warga. | AES-256 encryption. |
-| **Penyimpanan Berkas Bukti** | Mengunggah foto bukti transfer dan scan KTP ke *Object Storage* yang aman menggunakan *Presigned Upload URL* dan validasi tipe berkas ketat (hanya JPG, PNG, PDF maks. 2MB). | AWS S3, Google Cloud Storage, Cloudinary, atau MinIO lokal. |
-| **Payment Gateway Otomatis** | Menggantikan upload struk manual dengan integrasi payment gateway resmi agar verifikasi transfer bank dan QRIS berjalan otomatis melalui *Webhook callback*. | Midtrans, Xendit, atau Tripay (QRIS Dinamis & Virtual Account). |
-| **Verifikasi Keaslian Surat** | Menghasilkan QR code resmi pada surat pengantar yang ketika dipindai kamera HP akan membuka laman verifikasi publik backend: `https://domain-rt.id/verify-surat/{hash}` untuk membuktikan keaslian surat tanpa bisa dimanipulasi warga. | SHA-256 token verification endpoint. |
+| Area | Tindakan yang Telah & Harus Dilakukan | Teknologi / Implementasi | Status |
+| :--- | :--- | :--- | :--- |
+| **Backend API** | RESTful API terintegrasi menangani autentikasi Sanctum, master warga, mutasi kas, approval surat, dan verifikasi transfer. | Laravel 10 (Controllers, Migrations, Seeders, API Resources). | ✅ Selesai (`warga-be`) |
+| **Database** | Basis data relasional dengan indeks relasi NIK, KK, status iuran, dan transaksi kas. | PostgreSQL (`db_warga`, port 5433). | ✅ Selesai |
+| **Autentikasi Aman** | Multi-role JWT / Bearer Token Laravel Sanctum (Ketua RT, Sekretaris, Bendahara, Warga). | Laravel Sanctum API Token. | ✅ Selesai |
+| **Perlindungan Data (UU PDP)** | Enkripsi kolom sensitif (NIK, KK) di database (*encryption at rest*), serta implementasi *data masking* pada tampilan warga. | AES-256 (CBC/HMAC Blind Index) + Frontend UI Masking. | ✅ Selesai |
+| **Penyimpanan Berkas Bukti** | Mengunggah foto bukti transfer dan scan KTP ke *Storage* lokal/cloud (storage symlink aktif). | Laravel Storage Symlink / MinIO / S3. | ✅ Selesai (Local Storage) |
+| **Payment Gateway Otomatis** | Menggantikan upload struk manual dengan integrasi payment gateway resmi agar verifikasi transfer bank dan QRIS berjalan otomatis melalui *Webhook callback*. | Midtrans / Tripay (Dynamic QRIS, Virtual Account BCA/Mandiri/BNI/BRI & Webhook Settlement). | ✅ Selesai |
+| **Verifikasi Keaslian Surat** | Menghasilkan QR code resmi pada surat pengantar yang ketika dipindai kamera HP akan membuka laman verifikasi publik backend: `https://domain-rt.id/verify-surat/{hash}` untuk membuktikan keaslian surat tanpa bisa dimanipulasi warga. | SHA-256 token verification endpoint. | ⏳ Roadmap Selanjutnya |
 
 ---
 

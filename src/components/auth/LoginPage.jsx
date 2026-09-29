@@ -5,12 +5,15 @@ import {
 } from 'lucide-react';
 import { RT_INFO, INITIAL_USERS, INITIAL_CITIZENS } from '../../data/mockData';
 
+import api from '../../services/api';
+
 export default function LoginPage({ onLogin }) {
   const [loginType, setLoginType] = useState('pengurus'); // 'pengurus' | 'warga'
   const [emailOrNik, setEmailOrNik] = useState('');
   const [password, setPassword] = useState('');
   const [selectedPengurusRole, setSelectedPengurusRole] = useState('Ketua RT');
   const [selectedCitizenId, setSelectedCitizenId] = useState(INITIAL_CITIZENS[2]?.id || 3); // Andi Pratama default
+  const [isLoading, setIsLoading] = useState(false);
 
   // Demo accounts
   const demoPengurus = [
@@ -45,43 +48,104 @@ export default function LoginPage({ onLogin }) {
 
   const demoWargaList = INITIAL_CITIZENS.slice(0, 4);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (loginType === 'pengurus') {
-      const user = demoPengurus.find(p => p.role === selectedPengurusRole);
-      onLogin({
-        id: selectedPengurusRole === 'Ketua RT' ? 1 : selectedPengurusRole === 'Sekretaris' ? 2 : 3,
-        nama: user.name,
-        role: user.role,
-        email: user.email,
-        jabatan: `${user.role} RT 007`
+    setIsLoading(true);
+    try {
+      if (loginType === 'pengurus') {
+        const user = demoPengurus.find(p => p.role === selectedPengurusRole);
+        const res = await api.auth.login({
+          login: emailOrNik || user.email,
+          role: selectedPengurusRole,
+          password: password || 'password',
+        });
+        if (res?.token) {
+          localStorage.setItem('auth_token', res.token);
+        }
+        onLogin(res.user);
+      } else {
+        const citizen = INITIAL_CITIZENS.find(c => c.id === Number(selectedCitizenId)) || INITIAL_CITIZENS[0];
+        const res = await api.auth.login({
+          nik: emailOrNik || citizen.nik,
+          role: 'Warga',
+          password: password || 'password',
+        });
+        if (res?.token) {
+          localStorage.setItem('auth_token', res.token);
+        }
+        onLogin(res.user?.citizen ? { ...res.user.citizen, ...res.user } : { ...citizen, role: 'Warga', jabatan: `Warga (${citizen.blok} No. ${citizen.noRumah})` });
+      }
+    } catch (err) {
+      console.warn('API login failed, using fallback:', err);
+      if (loginType === 'pengurus') {
+        const user = demoPengurus.find(p => p.role === selectedPengurusRole);
+        onLogin({
+          id: selectedPengurusRole === 'Ketua RT' ? 1 : selectedPengurusRole === 'Sekretaris' ? 2 : 3,
+          nama: user.name,
+          role: user.role,
+          email: user.email,
+          jabatan: `${user.role} RT 007`
+        });
+      } else {
+        const citizen = INITIAL_CITIZENS.find(c => c.id === Number(selectedCitizenId)) || INITIAL_CITIZENS[0];
+        onLogin({
+          ...citizen,
+          role: 'Warga',
+          jabatan: `Warga (${citizen.blok} No. ${citizen.noRumah})`
+        });
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleQuickLoginPengurus = async (pengurus) => {
+    setIsLoading(true);
+    try {
+      const res = await api.auth.login({
+        role: pengurus.role,
+        password: 'password',
       });
-    } else {
-      const citizen = INITIAL_CITIZENS.find(c => c.id === Number(selectedCitizenId)) || INITIAL_CITIZENS[0];
+      if (res?.token) {
+        localStorage.setItem('auth_token', res.token);
+      }
+      onLogin(res.user);
+    } catch (err) {
+      console.warn('Quick login fallback:', err);
+      onLogin({
+        id: pengurus.role === 'Ketua RT' ? 1 : pengurus.role === 'Sekretaris' ? 2 : 3,
+        nama: pengurus.name,
+        role: pengurus.role,
+        email: pengurus.email,
+        jabatan: `${pengurus.role} RT 007`
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleQuickLoginWarga = async (citizen) => {
+    setIsLoading(true);
+    try {
+      const res = await api.auth.login({
+        nik: citizen.nik,
+        role: 'Warga',
+        password: 'password',
+      });
+      if (res?.token) {
+        localStorage.setItem('auth_token', res.token);
+      }
+      onLogin(res.user?.citizen ? { ...res.user.citizen, ...res.user } : { ...citizen, role: 'Warga', jabatan: `Warga (${citizen.blok} No. ${citizen.noRumah})` });
+    } catch (err) {
+      console.warn('Quick login fallback:', err);
       onLogin({
         ...citizen,
         role: 'Warga',
         jabatan: `Warga (${citizen.blok} No. ${citizen.noRumah})`
       });
+    } finally {
+      setIsLoading(false);
     }
-  };
-
-  const handleQuickLoginPengurus = (pengurus) => {
-    onLogin({
-      id: pengurus.role === 'Ketua RT' ? 1 : pengurus.role === 'Sekretaris' ? 2 : 3,
-      nama: pengurus.name,
-      role: pengurus.role,
-      email: pengurus.email,
-      jabatan: `${pengurus.role} RT 007`
-    });
-  };
-
-  const handleQuickLoginWarga = (citizen) => {
-    onLogin({
-      ...citizen,
-      role: 'Warga',
-      jabatan: `Warga (${citizen.blok} No. ${citizen.noRumah})`
-    });
   };
 
   return (

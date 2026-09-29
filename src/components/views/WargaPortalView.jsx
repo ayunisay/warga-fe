@@ -1,11 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Home, FileText, Wallet, Bell, LogOut, CheckCircle2, 
   Clock, Plus, Calendar, AlertCircle, Phone, MapPin, 
   QrCode, CreditCard, ChevronRight, Download, Printer, ShieldCheck,
-  Copy, Check, MessageSquare, UploadCloud, ExternalLink, User, Users
+  Copy, Check, MessageSquare, UploadCloud, ExternalLink, User, Users,
+  Eye, EyeOff, Zap, RefreshCw, Building2
 } from 'lucide-react';
 import { RT_INFO } from '../../data/mockData';
+import { maskNik, maskKk } from '../../utils/privacyUtils';
+import api from '../../services/api';
 import Footer from '../Footer';
 
 export default function WargaPortalView({ 
@@ -20,15 +23,25 @@ export default function WargaPortalView({
 }) {
   const [activeTab, setActiveTab] = useState('dashboard'); // 'dashboard' | 'surat' | 'iuran'
   const [showAddSuratModal, setShowAddSuratModal] = useState(false);
+  const [revealPortalKk, setRevealPortalKk] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [paymentSuccessReceipt, setPaymentSuccessReceipt] = useState(null);
-  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState('qris'); // 'qris' | 'transfer' | 'tunai'
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState('qris'); // 'qris' | 'va' | 'transfer' | 'tunai'
   const [selectedMonth, setSelectedMonth] = useState('Maret 2026');
   const [selectedBank, setSelectedBank] = useState('mandiri');
   const [copiedBank, setCopiedBank] = useState(false);
   const [transferProof, setTransferProof] = useState(null);
   const [offlineNoticeSent, setOfflineNoticeSent] = useState(false);
   const [offlineSchedule, setOfflineSchedule] = useState('Hari ini (16.00 - 18.00 WIB)');
+
+  // State Payment Gateway Otomatis (Midtrans / Tripay standard)
+  const [gatewayOrder, setGatewayOrder] = useState(null);
+  const [gatewayLoading, setGatewayLoading] = useState(false);
+  const [gatewayError, setGatewayError] = useState(null);
+  const [vaBank, setVaBank] = useState('bca'); // 'bca' | 'mandiri' | 'bni' | 'bri'
+  const [copiedVa, setCopiedVa] = useState(false);
+  const [countdownSecs, setCountdownSecs] = useState(900);
+
   const [paidMonths, setPaidMonths] = useState({
     'Januari 2026': true,
     'Februari 2026': true,
@@ -165,6 +178,159 @@ export default function WargaPortalView({
     }
     setShowPaymentModal(false);
     setPaymentSuccessReceipt(receiptData);
+  };
+
+  // Helper Copy Virtual Account
+  const handleCopyVa = (vaNumber) => {
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(vaNumber);
+    }
+    setCopiedVa(true);
+    setTimeout(() => setCopiedVa(false), 2500);
+  };
+
+  // Generate / Load Payment Gateway Order (Midtrans / Tripay Dynamic QRIS or Virtual Account)
+  const loadGatewayCharge = async (method = selectedPaymentMethod, bankChoice = vaBank) => {
+    if (method !== 'qris' && method !== 'va') return;
+    setGatewayLoading(true);
+    setGatewayError(null);
+
+    const isPayAll = selectedMonth === 'Semua Tagihan';
+    const amountToPay = isPayAll ? (unpaidMonthsList.length * 60000) : 60000;
+    const periodeToDisplay = isPayAll 
+      ? `Pelunasan Semua Tagihan (${unpaidMonthsList.map(m => m.bulan.split(' ')[0]).join(', ')} 2026)` 
+      : selectedMonth;
+
+    try {
+      const res = await api.payments.charge({
+        citizen_id: citizen?.id,
+        nama_warga: citizen?.nama || 'Warga RT 007',
+        blok: citizen?.blok || 'A',
+        no_rumah: citizen?.noRumah || '01',
+        periode: periodeToDisplay,
+        nominal: amountToPay,
+        payment_type: method === 'qris' ? 'qris' : 'bank_transfer',
+        bank: method === 'va' ? bankChoice : undefined
+      });
+
+      if (res?.data) {
+        setGatewayOrder(res.data);
+        setCountdownSecs(res.data.expired_in_seconds || 900);
+      }
+    } catch (err) {
+      console.warn('Gagal memuat gateway charge:', err);
+      setGatewayError(err.message || 'Koneksi ke gateway pembayaran sedang bermasalah');
+    } finally {
+      setGatewayLoading(false);
+    }
+  };
+
+  // Trigger charge loading whenever payment modal opens or user switches to QRIS / VA
+  useEffect(() => {
+    if (!showPaymentModal) {
+      setGatewayOrder(null);
+      return;
+    }
+
+    if (selectedPaymentMethod === 'qris' || selectedPaymentMethod === 'va') {
+      loadGatewayCharge(selectedPaymentMethod, vaBank);
+    }
+  }, [showPaymentModal, selectedPaymentMethod, selectedMonth, vaBank]);
+
+  // Countdown timer effect
+  useEffect(() => {
+    if (!showPaymentModal || !gatewayOrder || countdownSecs <= 0) return;
+    const interval = setInterval(() => {
+      setCountdownSecs(prev => Math.max(0, prev - 1));
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [showPaymentModal, gatewayOrder, countdownSecs]);
+
+  // Payment Settlement Handler (When Webhook succeeds or is simulated)
+  const handleGatewaySettled = (settledData) => {
+    const isPayAll = selectedMonth === 'Semua Tagihan';
+    const amountToPay = settledData?.nominal || (isPayAll ? (unpaidMonthsList.length * 60000) : 60000);
+    const periodeToDisplay = isPayAll 
+      ? `Pelunasan Semua Tagihan (${unpaidMonthsList.map(m => m.bulan.split(' ')[0]).join(', ')} 2026)` 
+      : selectedMonth;
+
+    if (isPayAll) {
+      setPaidMonths(prev => {
+        const next = { ...prev };
+        MONTHS_DATA.forEach(item => {
+          next[item.bulan] = true;
+        });
+        return next;
+      });
+    } else {
+      setPaidMonths(prev => ({
+        ...prev,
+        [selectedMonth]: true
+      }));
+    }
+
+    const receiptData = {
+      noKuitansi: settledData?.order_id || gatewayOrder?.order_id || `KWT-GW-${Date.now().toString().slice(-6)}`,
+      tanggal: new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' }),
+      periode: periodeToDisplay,
+      nominal: amountToPay,
+      metode: (settledData?.payment_type === 'qris' || selectedPaymentMethod === 'qris')
+        ? 'QRIS Dinamis Otomatis (Midtrans / Tripay Webhook)'
+        : `Virtual Account ${String(settledData?.bank || vaBank).toUpperCase()} (Webhook Otomatis)`,
+      pembayar: citizen?.nama || 'Warga RT 007',
+      alamat: citizen?.alamat || 'RT 007 / RW 030',
+      blok: citizen?.blok || '',
+      noRumah: citizen?.noRumah || '',
+      catatan: 'Terverifikasi otomatis oleh Sistem Payment Gateway Webhook secara instan tanpa perlu unggah struk manual.'
+    };
+
+    if (onPayIuran) {
+      onPayIuran(citizen?.id, amountToPay, citizen?.nama, {
+        isGateway: true,
+        metode: selectedPaymentMethod,
+        periode: periodeToDisplay,
+        orderId: settledData?.order_id || gatewayOrder?.order_id
+      });
+    }
+
+    setShowPaymentModal(false);
+    setGatewayOrder(null);
+    setPaymentSuccessReceipt(receiptData);
+  };
+
+  // Real-time auto polling for payment status (every 3 seconds)
+  useEffect(() => {
+    if (!showPaymentModal || !gatewayOrder?.order_id || gatewayOrder?.status === 'settlement') return;
+
+    const poller = setInterval(async () => {
+      try {
+        const res = await api.payments.checkStatus(gatewayOrder.order_id);
+        if (res?.data?.is_paid || res?.data?.status === 'settlement') {
+          clearInterval(poller);
+          handleGatewaySettled(res.data);
+        }
+      } catch (err) {
+        // silent polling error
+      }
+    }, 3000);
+
+    return () => clearInterval(poller);
+  }, [showPaymentModal, gatewayOrder]);
+
+  // Simulate Gateway Webhook Payment Success (for 1-click developer & demo testing)
+  const handleSimulateWebhook = async () => {
+    if (!gatewayOrder?.order_id) return;
+    setGatewayLoading(true);
+    try {
+      const res = await api.payments.simulatePayment(gatewayOrder.order_id);
+      if (res?.success) {
+        handleGatewaySettled(res.data);
+      }
+    } catch (err) {
+      alert('Gagal simulasi webhook payment gateway: ' + (err.message || 'Error'));
+    } finally {
+      setGatewayLoading(false);
+    }
   };
 
   return (
@@ -581,8 +747,15 @@ export default function WargaPortalView({
                 <div style={{ fontSize: '16px', fontWeight: 800, color: '#1e293b', marginBottom: '4px' }}>
                   {citizen.blok} No. {citizen.noRumah}
                 </div>
-                <div style={{ fontSize: '12.5px', color: '#64748b', marginBottom: '14px' }}>
-                  No. KK: <code style={{ color: '#0f172a', fontWeight: 600 }}>{citizen.noKk}</code>
+                <div style={{ fontSize: '12.5px', color: '#64748b', marginBottom: '14px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <span>No. KK: <code style={{ color: '#0f172a', fontWeight: 600 }}>{revealPortalKk ? citizen.noKk : (citizen.noKkMasked || maskKk(citizen.noKk))}</code></span>
+                  <button
+                    onClick={() => setRevealPortalKk(!revealPortalKk)}
+                    style={{ background: 'none', border: 'none', color: '#3B7594', cursor: 'pointer', padding: '0 2px', display: 'inline-flex', alignItems: 'center' }}
+                    title={revealPortalKk ? "Sensor No. KK (UU PDP)" : "Buka sensor No. KK"}
+                  >
+                    {revealPortalKk ? <EyeOff size={13} /> : <Eye size={13} />}
+                  </button>
                 </div>
 
                 <div style={{
@@ -1207,10 +1380,10 @@ export default function WargaPortalView({
                       </div>
                       <div>
                         <div style={{ fontSize: '13.5px', fontWeight: 800, color: '#1e293b' }}>
-                          Scan QRIS RT 007
+                          QRIS Dinamis Otomatis
                         </div>
-                        <div style={{ fontSize: '11px', color: '#64748b' }}>
-                          BCA, Mandiri, BRI, GoPay, OVO, Dana, ShopeePay
+                        <div style={{ fontSize: '11px', color: '#16a34a', fontWeight: 600 }}>
+                          ⚡ Verifikasi Webhook Instan (Semua e-Wallet & Bank)
                         </div>
                       </div>
                     </div>
@@ -1221,7 +1394,7 @@ export default function WargaPortalView({
                         setShowPaymentModal(true);
                       }}
                       style={{
-                        background: '#3B7594',
+                        background: '#0284c7',
                         color: '#ffffff',
                         padding: '8px 14px',
                         borderRadius: '8px',
@@ -1234,7 +1407,52 @@ export default function WargaPortalView({
                     </button>
                   </div>
 
-                  {/* Sub-Option 2: Transfer Bank (TF) */}
+                  {/* Sub-Option 1b: Virtual Account Otomatis */}
+                  <div style={{
+                    background: '#f8fafc',
+                    borderRadius: '12px',
+                    padding: '14px',
+                    border: '1px solid #e2e8f0',
+                    marginBottom: '12px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    gap: '12px'
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                      <div style={{ width: '40px', height: '40px', background: '#e0f2fe', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#0284c7' }}>
+                        <Building2 size={22} />
+                      </div>
+                      <div>
+                        <div style={{ fontSize: '13.5px', fontWeight: 800, color: '#1e293b' }}>
+                          Virtual Account (VA) Otomatis
+                        </div>
+                        <div style={{ fontSize: '11px', color: '#0369a1', fontWeight: 600 }}>
+                          ⚡ Nomor VA Unik (BCA, Mandiri, BNI, BRI)
+                        </div>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => {
+                        setSelectedPaymentMethod('va');
+                        setSelectedMonth(paidMonths['Maret 2026'] ? 'April 2026' : 'Maret 2026');
+                        setShowPaymentModal(true);
+                      }}
+                      style={{
+                        background: '#0284c7',
+                        color: '#ffffff',
+                        padding: '8px 14px',
+                        borderRadius: '8px',
+                        fontSize: '12px',
+                        fontWeight: 700,
+                        cursor: 'pointer'
+                      }}
+                    >
+                      Pilih VA →
+                    </button>
+                  </div>
+
+                  {/* Sub-Option 2: Transfer Bank Manual */}
                   <div style={{
                     background: '#f8fafc',
                     borderRadius: '12px',
@@ -1540,7 +1758,7 @@ export default function WargaPortalView({
                   Ajukan Permohonan Surat Pengantar RT
                 </h3>
                 <span style={{ fontSize: '12px', color: '#64748b' }}>
-                  Pemohon: <strong>{citizen.nama}</strong> (NIK: {citizen.nik})
+                  Pemohon: <strong>{citizen.nama}</strong> (NIK: <span style={{ fontFamily: 'monospace' }}>{citizen.nikMasked || maskNik(citizen.nik)}</span>)
                 </span>
               </div>
               <button 
@@ -1699,116 +1917,351 @@ export default function WargaPortalView({
               </div>
             </div>
 
-            {/* Tab Pilihan Metode: QRIS vs Transfer vs Offline */}
+            {/* Tab Pilihan Metode: QRIS vs Virtual Account vs Transfer Manual vs Offline */}
             <div style={{ marginBottom: '18px' }}>
-              <label style={{ display: 'block', fontSize: '13px', fontWeight: 700, marginBottom: '8px', color: '#334155' }}>
-                Pilih Jalur & Metode Pembayaran:
-              </label>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                <label style={{ fontSize: '13px', fontWeight: 700, color: '#334155' }}>
+                  Pilih Jalur & Metode Pembayaran:
+                </label>
+                <span style={{ fontSize: '11px', background: '#dcfce7', color: '#15803d', padding: '2px 8px', borderRadius: '12px', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  <Zap size={11} fill="#15803d" /> Gateway Otomatis Aktif
+                </span>
+              </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' }}>
-                {/* Tab 1: QRIS */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px' }}>
+                {/* Tab 1: QRIS Dinamis Otomatis */}
                 <div
                   onClick={() => setSelectedPaymentMethod('qris')}
                   style={{
-                    border: selectedPaymentMethod === 'qris' ? '2px solid #3B7594' : '1px solid #cbd5e1',
+                    border: selectedPaymentMethod === 'qris' ? '2px solid #0284c7' : '1px solid #cbd5e1',
                     background: selectedPaymentMethod === 'qris' ? '#f0f9ff' : '#ffffff',
                     borderRadius: '10px',
-                    padding: '12px 6px',
+                    padding: '10px 4px',
                     textAlign: 'center',
                     cursor: 'pointer',
-                    transition: 'all 0.2s'
+                    transition: 'all 0.2s',
+                    position: 'relative'
                   }}
                 >
-                  <QrCode size={22} color={selectedPaymentMethod === 'qris' ? '#0284c7' : '#64748b'} style={{ margin: '0 auto 4px' }} />
-                  <div style={{ fontSize: '12px', fontWeight: 800, color: selectedPaymentMethod === 'qris' ? '#0369a1' : '#1e293b' }}>
-                    1. QRIS (QR)
+                  <span style={{ position: 'absolute', top: '-6px', right: '-4px', background: '#16a34a', color: '#ffffff', fontSize: '9px', fontWeight: 900, padding: '1px 5px', borderRadius: '6px' }}>
+                    INSTAN
+                  </span>
+                  <QrCode size={20} color={selectedPaymentMethod === 'qris' ? '#0284c7' : '#64748b'} style={{ margin: '0 auto 4px' }} />
+                  <div style={{ fontSize: '11.5px', fontWeight: 800, color: selectedPaymentMethod === 'qris' ? '#0369a1' : '#1e293b' }}>
+                    1. QRIS Dinamis
                   </div>
-                  <div style={{ fontSize: '10px', color: '#16a34a', fontWeight: 600 }}>Web Online</div>
+                  <div style={{ fontSize: '9.5px', color: '#16a34a', fontWeight: 700 }}>Auto Webhook</div>
                 </div>
 
-                {/* Tab 2: Transfer Bank */}
+                {/* Tab 2: Virtual Account Otomatis */}
+                <div
+                  onClick={() => setSelectedPaymentMethod('va')}
+                  style={{
+                    border: selectedPaymentMethod === 'va' ? '2px solid #0284c7' : '1px solid #cbd5e1',
+                    background: selectedPaymentMethod === 'va' ? '#f0f9ff' : '#ffffff',
+                    borderRadius: '10px',
+                    padding: '10px 4px',
+                    textAlign: 'center',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s',
+                    position: 'relative'
+                  }}
+                >
+                  <span style={{ position: 'absolute', top: '-6px', right: '-4px', background: '#0284c7', color: '#ffffff', fontSize: '9px', fontWeight: 900, padding: '1px 5px', borderRadius: '6px' }}>
+                    VA
+                  </span>
+                  <Building2 size={20} color={selectedPaymentMethod === 'va' ? '#0284c7' : '#64748b'} style={{ margin: '0 auto 4px' }} />
+                  <div style={{ fontSize: '11.5px', fontWeight: 800, color: selectedPaymentMethod === 'va' ? '#0369a1' : '#1e293b' }}>
+                    2. Virtual Account
+                  </div>
+                  <div style={{ fontSize: '9.5px', color: '#0284c7', fontWeight: 700 }}>BCA/Mandiri/BNI</div>
+                </div>
+
+                {/* Tab 3: Transfer Manual Bank RT */}
                 <div
                   onClick={() => setSelectedPaymentMethod('transfer')}
                   style={{
                     border: selectedPaymentMethod === 'transfer' ? '2px solid #3B7594' : '1px solid #cbd5e1',
                     background: selectedPaymentMethod === 'transfer' ? '#f0f9ff' : '#ffffff',
                     borderRadius: '10px',
-                    padding: '12px 6px',
+                    padding: '10px 4px',
                     textAlign: 'center',
                     cursor: 'pointer',
                     transition: 'all 0.2s'
                   }}
                 >
-                  <CreditCard size={22} color={selectedPaymentMethod === 'transfer' ? '#0284c7' : '#64748b'} style={{ margin: '0 auto 4px' }} />
-                  <div style={{ fontSize: '12px', fontWeight: 800, color: selectedPaymentMethod === 'transfer' ? '#0369a1' : '#1e293b' }}>
-                    2. Transfer (TF)
+                  <CreditCard size={20} color={selectedPaymentMethod === 'transfer' ? '#0284c7' : '#64748b'} style={{ margin: '0 auto 4px' }} />
+                  <div style={{ fontSize: '11.5px', fontWeight: 800, color: selectedPaymentMethod === 'transfer' ? '#0369a1' : '#1e293b' }}>
+                    3. Transfer Rek
                   </div>
-                  <div style={{ fontSize: '10px', color: '#16a34a', fontWeight: 600 }}>Mandiri / BCA</div>
+                  <div style={{ fontSize: '9.5px', color: '#64748b', fontWeight: 600 }}>Upload Struk</div>
                 </div>
 
-                {/* Tab 3: Offline / Tunai */}
+                {/* Tab 4: Offline / Tunai */}
                 <div
                   onClick={() => setSelectedPaymentMethod('tunai')}
                   style={{
                     border: selectedPaymentMethod === 'tunai' ? '2px solid #ea580c' : '1px solid #cbd5e1',
                     background: selectedPaymentMethod === 'tunai' ? '#fff7ed' : '#ffffff',
                     borderRadius: '10px',
-                    padding: '12px 6px',
+                    padding: '10px 4px',
                     textAlign: 'center',
                     cursor: 'pointer',
                     transition: 'all 0.2s'
                   }}
                 >
-                  <Users size={22} color={selectedPaymentMethod === 'tunai' ? '#ea580c' : '#64748b'} style={{ margin: '0 auto 4px' }} />
-                  <div style={{ fontSize: '12px', fontWeight: 800, color: selectedPaymentMethod === 'tunai' ? '#9a3412' : '#1e293b' }}>
-                    3. Offline Tunai
+                  <Users size={20} color={selectedPaymentMethod === 'tunai' ? '#ea580c' : '#64748b'} style={{ margin: '0 auto 4px' }} />
+                  <div style={{ fontSize: '11.5px', fontWeight: 800, color: selectedPaymentMethod === 'tunai' ? '#9a3412' : '#1e293b' }}>
+                    4. Setor Tunai
                   </div>
-                  <div style={{ fontSize: '10px', color: '#ea580c', fontWeight: 600 }}>Ketemu Pengurus</div>
+                  <div style={{ fontSize: '9.5px', color: '#ea580c', fontWeight: 600 }}>Ke Pengurus</div>
                 </div>
               </div>
             </div>
 
-            {/* DETAIL METODE 1: QRIS */}
+            {/* DETAIL METODE 1: QRIS DINAMIS OTOMATIS (WEBHOOK) */}
             {selectedPaymentMethod === 'qris' && (
               <div style={{ background: '#f8fafc', padding: '16px', borderRadius: '12px', textAlign: 'center', marginBottom: '18px', border: '1px solid #e2e8f0' }}>
-                <div style={{ fontSize: '12px', fontWeight: 800, color: '#334155', marginBottom: '8px' }}>
-                  SCAN KODE QRIS RESMI KAS RT 007 TELUK PUCUNG
-                </div>
-
-                {/* Simulated QR Code Box */}
-                <div style={{
-                  width: '170px',
-                  height: '170px',
-                  margin: '0 auto 10px',
-                  background: '#ffffff',
-                  border: '2px solid #0f172a',
-                  borderRadius: '12px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  position: 'relative',
-                  boxShadow: '0 4px 10px rgba(0,0,0,0.06)'
-                }}>
-                  <QrCode size={140} color="#0f172a" />
-                  <span style={{ position: 'absolute', bottom: '6px', fontSize: '9px', fontWeight: 900, background: '#f5c443', color: '#1a3848', padding: '2px 6px', borderRadius: '4px' }}>
-                    QRIS KAS RT 007
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                  <span style={{ fontSize: '12px', fontWeight: 800, color: '#0f172a', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <QrCode size={16} color="#0284c7" /> QRIS DINAMIS RESMI KAS RT 007
+                  </span>
+                  <span style={{ fontSize: '11px', fontWeight: 700, color: '#dc2626', background: '#fee2e2', padding: '2px 8px', borderRadius: '6px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <Clock size={12} /> {Math.floor(countdownSecs / 60)}:{String(countdownSecs % 60).padStart(2, '0')}
                   </span>
                 </div>
 
-                <div style={{ fontSize: '12px', color: '#475569', marginBottom: '6px' }}>
-                  NMID: <strong>ID102026007030</strong> • Nominal: <strong style={{ color: '#15803d' }}>Rp 60.000</strong>
-                </div>
-                <div style={{ fontSize: '11px', color: '#64748b', background: '#e0f2fe', padding: '6px 10px', borderRadius: '6px', display: 'inline-block' }}>
-                  Buka aplikasi m-Banking (BCA, Mandiri, BRI, BNI) atau e-Wallet (GoPay, OVO, Dana) lalu scan QR di atas.
-                </div>
+                {gatewayLoading && !gatewayOrder ? (
+                  <div style={{ padding: '36px', color: '#64748b', fontSize: '13px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+                    <RefreshCw size={18} className="animate-spin" /> Menghasilkan kode QRIS Dinamis dari Gateway...
+                  </div>
+                ) : (
+                  <>
+                    {/* QR Code Container */}
+                    <div style={{
+                      width: '180px',
+                      height: '180px',
+                      margin: '0 auto 10px',
+                      background: '#ffffff',
+                      border: '2px solid #0f172a',
+                      borderRadius: '12px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      position: 'relative',
+                      boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
+                      overflow: 'hidden',
+                      padding: '8px'
+                    }}>
+                      {gatewayOrder?.qr_url ? (
+                        <img 
+                          src={gatewayOrder.qr_url} 
+                          alt="QRIS Dinamis RT 007" 
+                          style={{ width: '100%', height: '100%', objectFit: 'contain' }} 
+                        />
+                      ) : (
+                        <QrCode size={140} color="#0f172a" />
+                      )}
+                      <span style={{ position: 'absolute', bottom: '4px', fontSize: '8.5px', fontWeight: 900, background: '#f5c443', color: '#1a3848', padding: '1px 6px', borderRadius: '4px' }}>
+                        QRIS MIDTRANS / TRIPAY
+                      </span>
+                    </div>
+
+                    <div style={{ fontSize: '12px', color: '#475569', marginBottom: '4px' }}>
+                      Order ID: <code style={{ fontWeight: 800, color: '#0369a1' }}>{gatewayOrder?.order_id || 'Generating...'}</code>
+                    </div>
+                    <div style={{ fontSize: '12px', color: '#475569', marginBottom: '8px' }}>
+                      Merchant: <strong>KAS RT 007 RW 030</strong> • Total: <strong style={{ color: '#15803d' }}>Rp {(selectedMonth === 'Semua Tagihan' ? (unpaidMonthsList.length * 60000) : 60000).toLocaleString('id-ID')}</strong>
+                    </div>
+
+                    {/* Auto-detect pulse bar */}
+                    <div style={{
+                      background: '#ecfdf5',
+                      border: '1px solid #a7f3d0',
+                      padding: '8px 12px',
+                      borderRadius: '8px',
+                      fontSize: '11px',
+                      color: '#065f46',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '8px',
+                      marginBottom: '10px'
+                    }}>
+                      <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#10b981', display: 'inline-block', boxShadow: '0 0 8px #10b981' }}></span>
+                      <span>Menunggu pembayaran terdeteksi oleh sistem webhook (otomatis tanpa upload struk)...</span>
+                    </div>
+
+                    {/* Simulation / Webhook Test Button */}
+                    <div style={{ background: '#f0f9ff', border: '1px dashed #0284c7', borderRadius: '8px', padding: '10px', marginTop: '10px' }}>
+                      <div style={{ fontSize: '11px', color: '#0369a1', fontWeight: 600, marginBottom: '6px' }}>
+                        🛠️ <strong>Mode Pengujian Gateway (Demo/Evaluasi):</strong>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={handleSimulateWebhook}
+                        disabled={gatewayLoading}
+                        style={{
+                          width: '100%',
+                          background: '#0284c7',
+                          color: '#ffffff',
+                          padding: '8px 12px',
+                          borderRadius: '6px',
+                          fontSize: '11.5px',
+                          fontWeight: 800,
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: '6px',
+                          border: 'none'
+                        }}
+                      >
+                        <Zap size={14} fill="#ffffff" />
+                        {gatewayLoading ? 'Memproses Webhook...' : '⚡ Simulasikan Pembayaran QRIS (Kirim Webhook Settlement)'}
+                      </button>
+                      <div style={{ fontSize: '10px', color: '#64748b', marginTop: '4px' }}>
+                        *Menembak endpoint <code>/api/payments/webhook</code> dengan signature resmi. Iuran langsung Lunas secara instan.
+                      </div>
+                    </div>
+                  </>
+                )}
               </div>
             )}
 
-            {/* DETAIL METODE 2: TRANSFER BANK (TF) */}
+            {/* DETAIL METODE 2: VIRTUAL ACCOUNT OTOMATIS (WEBHOOK) */}
+            {selectedPaymentMethod === 'va' && (
+              <div style={{ background: '#f8fafc', padding: '16px', borderRadius: '12px', marginBottom: '18px', border: '1px solid #e2e8f0' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                  <label style={{ fontSize: '12px', fontWeight: 700, color: '#475569' }}>
+                    Pilih Bank Virtual Account (Otomatis):
+                  </label>
+                  <span style={{ fontSize: '11px', fontWeight: 700, color: '#dc2626', background: '#fee2e2', padding: '2px 8px', borderRadius: '6px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <Clock size={12} /> {Math.floor(countdownSecs / 60)}:{String(countdownSecs % 60).padStart(2, '0')}
+                  </span>
+                </div>
+
+                {/* Bank Options */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '6px', marginBottom: '14px' }}>
+                  {['bca', 'mandiri', 'bni', 'bri'].map((b) => (
+                    <button
+                      key={b}
+                      type="button"
+                      onClick={() => setVaBank(b)}
+                      style={{
+                        padding: '8px 4px',
+                        borderRadius: '8px',
+                        fontSize: '11.5px',
+                        fontWeight: 800,
+                        border: vaBank === b ? '2px solid #0284c7' : '1px solid #cbd5e1',
+                        background: vaBank === b ? '#e0f2fe' : '#ffffff',
+                        color: vaBank === b ? '#0369a1' : '#475569',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      VA {b.toUpperCase()}
+                    </button>
+                  ))}
+                </div>
+
+                {gatewayLoading && !gatewayOrder ? (
+                  <div style={{ padding: '24px', textAlign: 'center', color: '#64748b', fontSize: '13px' }}>
+                    <RefreshCw size={18} className="animate-spin" style={{ margin: '0 auto 6px' }} />
+                    Membuat Nomor Virtual Account {vaBank.toUpperCase()}...
+                  </div>
+                ) : (
+                  <>
+                    {/* VA Number Card */}
+                    <div style={{ background: '#ffffff', padding: '14px', borderRadius: '10px', border: '1px solid #cbd5e1', marginBottom: '12px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <div>
+                          <div style={{ fontSize: '11px', color: '#64748b' }}>
+                            Nomor Virtual Account {vaBank.toUpperCase()}:
+                          </div>
+                          <div style={{ fontSize: '20px', fontWeight: 900, color: '#0f172a', letterSpacing: '1.5px', marginTop: '2px', fontFamily: 'monospace' }}>
+                            {gatewayOrder?.va_number || '700778129876543'}
+                          </div>
+                          <div style={{ fontSize: '11.5px', color: '#0284c7', fontWeight: 700, marginTop: '2px' }}>
+                            a.n. KAS RT 007 - {citizen?.nama || 'Warga'}
+                          </div>
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={() => handleCopyVa(gatewayOrder?.va_number || '700778129876543')}
+                          style={{
+                            padding: '8px 12px',
+                            borderRadius: '8px',
+                            background: copiedVa ? '#dcfce7' : '#0284c7',
+                            color: copiedVa ? '#15803d' : '#ffffff',
+                            fontSize: '12px',
+                            fontWeight: 700,
+                            border: 'none',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '4px',
+                            cursor: 'pointer'
+                          }}
+                        >
+                          {copiedVa ? <Check size={14} /> : <Copy size={14} />}
+                          {copiedVa ? 'Tersalin!' : 'Salin VA'}
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Step-by-step VA guide */}
+                    <div style={{ background: '#f1f5f9', padding: '10px 12px', borderRadius: '8px', fontSize: '11.5px', color: '#334155', lineHeight: 1.5, marginBottom: '10px' }}>
+                      <strong>Petunjuk Pembayaran m-Banking:</strong>
+                      <ol style={{ margin: '4px 0 0 16px', padding: 0 }}>
+                        <li>Buka aplikasi m-Banking {vaBank.toUpperCase()} Anda.</li>
+                        <li>Pilih menu <strong>Transfer → Virtual Account</strong>.</li>
+                        <li>Masukkan nomor VA di atas, nominal akan terisi otomatis.</li>
+                        <li>Konfirmasi PIN, status iuran Anda langsung lunas otomatis!</li>
+                      </ol>
+                    </div>
+
+                    {/* Simulation / Webhook Test Button */}
+                    <div style={{ background: '#f0f9ff', border: '1px dashed #0284c7', borderRadius: '8px', padding: '10px' }}>
+                      <div style={{ fontSize: '11px', color: '#0369a1', fontWeight: 600, marginBottom: '6px' }}>
+                        🛠️ <strong>Mode Pengujian Gateway (Demo/Evaluasi):</strong>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={handleSimulateWebhook}
+                        disabled={gatewayLoading}
+                        style={{
+                          width: '100%',
+                          background: '#0284c7',
+                          color: '#ffffff',
+                          padding: '8px 12px',
+                          borderRadius: '6px',
+                          fontSize: '11.5px',
+                          fontWeight: 800,
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: '6px',
+                          border: 'none'
+                        }}
+                      >
+                        <Zap size={14} fill="#ffffff" />
+                        {gatewayLoading ? 'Memproses Webhook...' : `⚡ Simulasikan Pembayaran VA ${vaBank.toUpperCase()} (Kirim Webhook Callback)`}
+                      </button>
+                      <div style={{ fontSize: '10px', color: '#64748b', marginTop: '4px' }}>
+                        *Simulasi pengiriman webhook callback dari bank penyedia VA ke backend SI-WARGA.
+                      </div>
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
+
+            {/* DETAIL METODE 3: TRANSFER BANK MANUAL (TF) + UNGGAH STRUK */}
             {selectedPaymentMethod === 'transfer' && (
               <div style={{ background: '#f8fafc', padding: '16px', borderRadius: '12px', marginBottom: '18px', border: '1px solid #e2e8f0' }}>
                 <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: '#475569', marginBottom: '8px' }}>
-                  Pilih Bank Tujuan Transfer:
+                  Pilih Rekening Kas RT Tujuan Transfer Manual:
                 </label>
 
                 {/* Bank Toggle */}
@@ -1890,7 +2343,7 @@ export default function WargaPortalView({
                 {/* Upload Bukti TF */}
                 <div>
                   <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: '#475569', marginBottom: '6px' }}>
-                    Lampirkan Bukti Transfer (Opsional):
+                    Lampirkan Bukti Transfer (Verifikasi Manual Bendahara):
                   </label>
                   <div style={{
                     border: '1px dashed #cbd5e1',
@@ -1922,18 +2375,21 @@ export default function WargaPortalView({
                       {transferProof ? 'Ganti' : 'Pilih File'}
                     </button>
                   </div>
+                  <div style={{ fontSize: '11px', color: '#64748b', marginTop: '6px' }}>
+                    *Memerlukan waktu verifikasi 1-24 jam oleh Bendahara RT.
+                  </div>
                 </div>
               </div>
             )}
 
-            {/* DETAIL METODE 3: OFFLINE / TUNAI KETEMU PENGURUS */}
+            {/* DETAIL METODE 4: OFFLINE / TUNAI KETEMU PENGURUS */}
             {selectedPaymentMethod === 'tunai' && (
               <div style={{ background: '#fffbeb', padding: '16px', borderRadius: '12px', marginBottom: '18px', border: '1px solid #fde68a' }}>
                 <div style={{ fontSize: '13px', fontWeight: 800, color: '#92400e', marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '6px' }}>
                   🤝 Setor Tunai Langsung ke Pengurus RT 007
                 </div>
                 <p style={{ fontSize: '12.5px', color: '#78350f', margin: '0 0 12px', lineHeight: 1.5 }}>
-                  Anda dapat menyetorkan uang tunai sebesar <strong>Rp 60.000</strong> langsung kepada <strong>Ibu Hj. Endang Suryaningsih (Bendahara RT)</strong> di Jl. Cempaka Blok C1 No. 04.
+                  Anda dapat menyetorkan uang tunai sebesar <strong>Rp {(selectedMonth === 'Semua Tagihan' ? (unpaidMonthsList.length * 60000) : 60000).toLocaleString('id-ID')}</strong> langsung kepada <strong>Ibu Hj. Endang Suryaningsih (Bendahara RT)</strong> di Jl. Cempaka Blok C1 No. 04.
                 </p>
 
                 <div style={{ marginBottom: '12px' }}>
@@ -1976,29 +2432,50 @@ export default function WargaPortalView({
                 Batal
               </button>
               
-              <button 
-                type="button"
-                onClick={handleConfirmPayment}
-                style={{
-                  padding: '10px 22px',
-                  borderRadius: '10px',
-                  background: selectedPaymentMethod === 'tunai' ? '#ea580c' : '#16a34a',
-                  color: '#fff',
-                  fontWeight: 800,
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                  boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
-                }}
-              >
-                <CheckCircle2 size={18} />
-                {selectedPaymentMethod === 'qris' 
-                  ? 'Saya Sudah Bayar via QRIS' 
-                  : selectedPaymentMethod === 'transfer' 
-                    ? 'Konfirmasi Transfer Selesai' 
+              {(selectedPaymentMethod === 'transfer' || selectedPaymentMethod === 'tunai') ? (
+                <button 
+                  type="button"
+                  onClick={handleConfirmPayment}
+                  style={{
+                    padding: '10px 22px',
+                    borderRadius: '10px',
+                    background: selectedPaymentMethod === 'tunai' ? '#ea580c' : '#16a34a',
+                    color: '#fff',
+                    fontWeight: 800,
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+                  }}
+                >
+                  <CheckCircle2 size={18} />
+                  {selectedPaymentMethod === 'transfer' 
+                    ? 'Kirim Bukti Transfer ke Bendahara' 
                     : 'Kirim Pemberitahuan Setor Tunai'}
-              </button>
+                </button>
+              ) : (
+                <button 
+                  type="button"
+                  onClick={handleSimulateWebhook}
+                  disabled={gatewayLoading}
+                  style={{
+                    padding: '10px 22px',
+                    borderRadius: '10px',
+                    background: '#16a34a',
+                    color: '#fff',
+                    fontWeight: 800,
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    boxShadow: '0 4px 12px rgba(22, 163, 74, 0.25)'
+                  }}
+                >
+                  <CheckCircle2 size={18} />
+                  {gatewayLoading ? 'Memproses...' : 'Saya Sudah Bayar (Cek Status)'}
+                </button>
+              )}
             </div>
           </div>
         </div>

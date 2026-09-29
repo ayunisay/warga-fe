@@ -12,6 +12,7 @@ import WargaPortalView from './components/views/WargaPortalView';
 import LoginPage from './components/auth/LoginPage';
 import SuratPrintModal from './components/modals/SuratPrintModal';
 import { INITIAL_CITIZENS, INITIAL_SURAT, INITIAL_TRANSACTIONS, INITIAL_USERS, INITIAL_ANNOUNCEMENTS, INITIAL_TRANSFER_VERIFICATIONS } from './data/mockData';
+import api from './services/api';
 import './index.css';
 
 export default function App() {
@@ -30,6 +31,47 @@ export default function App() {
   const [announcements, setAnnouncements] = useState(INITIAL_ANNOUNCEMENTS);
   const [transferVerifications, setTransferVerifications] = useState(INITIAL_TRANSFER_VERIFICATIONS);
   const [currentUserRole, setCurrentUserRole] = useState('Ketua RT');
+  const [isBackendConnected, setIsBackendConnected] = useState(false);
+
+  // Sinkronisasi data awal dari PostgreSQL backend REST API
+  const refreshData = async () => {
+    try {
+      const [citizensRes, suratRes, trxRes, usersRes, annRes, trfRes] = await Promise.allSettled([
+        api.citizens.getAll(),
+        api.surat.getAll(),
+        api.transactions.getAll(),
+        api.users.getAll(),
+        api.announcements.getAll(),
+        api.transfers.getAll(),
+      ]);
+
+      if (citizensRes.status === 'fulfilled' && citizensRes.value?.data) {
+        setCitizens(citizensRes.value.data);
+        setIsBackendConnected(true);
+      }
+      if (suratRes.status === 'fulfilled' && suratRes.value?.data) {
+        setSuratList(suratRes.value.data);
+      }
+      if (trxRes.status === 'fulfilled' && trxRes.value?.data) {
+        setTransactions(trxRes.value.data);
+      }
+      if (usersRes.status === 'fulfilled' && usersRes.value?.data) {
+        setUsers(usersRes.value.data);
+      }
+      if (annRes.status === 'fulfilled' && annRes.value?.data) {
+        setAnnouncements(annRes.value.data);
+      }
+      if (trfRes.status === 'fulfilled' && trfRes.value?.data) {
+        setTransferVerifications(trfRes.value.data);
+      }
+    } catch (err) {
+      console.warn('API error, using mock fallback:', err);
+    }
+  };
+
+  useEffect(() => {
+    refreshData();
+  }, []);
 
   // Sinkronisasi currentUserRole dengan currentUser
   useEffect(() => {
@@ -95,7 +137,7 @@ export default function App() {
     setActiveSubMenu(subMenu);
   };
 
-  const handleApproveSurat = (suratId) => {
+  const handleApproveSurat = async (suratId) => {
     setSuratList(prev => prev.map(s => {
       if (s.id === suratId) {
         return { ...s, status: 'Disetujui', catatanPenolakan: undefined };
@@ -105,9 +147,14 @@ export default function App() {
     if (selectedSuratForPrint && selectedSuratForPrint.id === suratId) {
       setSelectedSuratForPrint(prev => ({ ...prev, status: 'Disetujui', catatanPenolakan: undefined }));
     }
+    try {
+      await api.surat.updateStatus(suratId, { status: 'Disetujui' });
+    } catch (err) {
+      console.warn('API error updating surat status:', err);
+    }
   };
 
-  const handleRejectSurat = (suratId, catatanPenolakan) => {
+  const handleRejectSurat = async (suratId, catatanPenolakan) => {
     const reason = catatanPenolakan || 'Permohonan surat belum memenuhi persyaratan administratif RT 007.';
     setSuratList(prev => prev.map(s => {
       if (s.id === suratId) {
@@ -118,23 +165,46 @@ export default function App() {
     if (selectedSuratForPrint && selectedSuratForPrint.id === suratId) {
       setSelectedSuratForPrint(prev => ({ ...prev, status: 'Ditolak', catatanPenolakan: reason }));
     }
-  };
-
-  const handleAddCitizen = (newCitizen) => {
-    setCitizens(prev => [newCitizen, ...prev]);
-  };
-
-  const handleDeleteCitizen = (citizenId) => {
-    if (window.confirm('Yakin ingin menghapus data warga ini?')) {
-      setCitizens(prev => prev.filter(c => c.id !== citizenId));
+    try {
+      await api.surat.updateStatus(suratId, { status: 'Ditolak', catatanPenolakan: reason });
+    } catch (err) {
+      console.warn('API error rejecting surat:', err);
     }
   };
 
-  const handleAddTransaction = (newTrx) => {
-    setTransactions(prev => [newTrx, ...prev]);
+  const handleAddCitizen = async (newCitizen) => {
+    setCitizens(prev => [newCitizen, ...prev]);
+    try {
+      const res = await api.citizens.create(newCitizen);
+      if (res?.data) {
+        setCitizens(prev => prev.map(c => c.nik === newCitizen.nik ? res.data : c));
+      }
+    } catch (err) {
+      console.warn('API error adding citizen:', err);
+    }
   };
 
-  const handleToggleIuran = (citizenId) => {
+  const handleDeleteCitizen = async (citizenId) => {
+    if (window.confirm('Yakin ingin menghapus data warga ini?')) {
+      setCitizens(prev => prev.filter(c => c.id !== citizenId));
+      try {
+        await api.citizens.delete(citizenId);
+      } catch (err) {
+        console.warn('API error deleting citizen:', err);
+      }
+    }
+  };
+
+  const handleAddTransaction = async (newTrx) => {
+    setTransactions(prev => [newTrx, ...prev]);
+    try {
+      await api.transactions.create(newTrx);
+    } catch (err) {
+      console.warn('API error adding transaction:', err);
+    }
+  };
+
+  const handleToggleIuran = async (citizenId) => {
     setCitizens(prev => prev.map(c => {
       if (c.id === citizenId) {
         return {
@@ -144,33 +214,82 @@ export default function App() {
       }
       return c;
     }));
+    try {
+      await api.citizens.toggleIuran(citizenId);
+    } catch (err) {
+      console.warn('API error toggling iuran:', err);
+    }
   };
 
-  const handleAddSurat = (newSurat) => {
+  const handleAddSurat = async (newSurat) => {
     setSuratList(prev => [newSurat, ...prev]);
+    try {
+      const res = await api.surat.create(newSurat);
+      if (res?.data) {
+        setSuratList(prev => prev.map(s => s.id === newSurat.id ? res.data : s));
+      }
+    } catch (err) {
+      console.warn('API error adding surat:', err);
+    }
   };
 
-  const handleUpdateUser = (userId, updatedData) => {
+  const handleUpdateUser = async (userId, updatedData) => {
     setUsers(prev => prev.map(u => {
       if (u.id === userId) {
         return { ...u, ...updatedData };
       }
       return u;
     }));
-  };
-
-  const handleAddUser = (newUser) => {
-    setUsers(prev => [...prev, newUser]);
-  };
-
-  const handleDeleteUser = (userId) => {
-    if (window.confirm('Yakin ingin menghapus pengguna ini?')) {
-      setUsers(prev => prev.filter(u => u.id !== userId));
+    try {
+      await api.users.update(userId, updatedData);
+    } catch (err) {
+      console.warn('API error updating user:', err);
     }
   };
 
-  const handleCitizenPayIuran = (citizenId, nominal, citizenNama, paymentDetails = {}) => {
-    // Jika via transfer bank, tambahkan ke antrean verifikasi transfer Bendahara
+  const handleAddUser = async (newUser) => {
+    setUsers(prev => [...prev, newUser]);
+    try {
+      const res = await api.users.create(newUser);
+      if (res?.data) {
+        setUsers(prev => prev.map(u => (u.id === newUser.id || u.email === newUser.email) ? res.data : u));
+      }
+    } catch (err) {
+      console.warn('API error adding user:', err);
+    }
+  };
+
+  const handleDeleteUser = async (userId) => {
+    if (window.confirm('Yakin ingin menghapus pengguna ini?')) {
+      setUsers(prev => prev.filter(u => u.id !== userId));
+      try {
+        await api.users.delete(userId);
+      } catch (err) {
+        console.warn('API error deleting user:', err);
+      }
+    }
+  };
+
+  const handleCitizenPayIuran = async (citizenId, nominal, citizenNama, paymentDetails = {}) => {
+    // Jika pembayaran via Payment Gateway Otomatis (QRIS Dinamis / Virtual Account)
+    if (paymentDetails.isGateway) {
+      setCitizens(prev => prev.map(c => {
+        if (c.id === citizenId || c.nama === citizenNama) {
+          return { ...c, statusIuran: 'Lunas' };
+        }
+        return c;
+      }));
+
+      if (currentUser && (currentUser.id === citizenId || currentUser.nama === citizenNama)) {
+        setCurrentUser(prev => ({ ...prev, statusIuran: 'Lunas' }));
+      }
+
+      // Sinkronisasi data terbaru dari database backend (kas, verifikasi transfer, warga)
+      await refreshData();
+      return;
+    }
+
+    // Jika via transfer bank manual, tambahkan ke antrean verifikasi transfer Bendahara
     if (paymentDetails.metode === 'transfer') {
       const newVerification = {
         id: `TRF-${Date.now().toString().slice(-6)}`,
@@ -190,6 +309,11 @@ export default function App() {
         catatanBendahara: ''
       };
       setTransferVerifications(prev => [newVerification, ...prev]);
+      try {
+        await api.transfers.create(newVerification);
+      } catch (err) {
+        console.warn('API error submitting transfer:', err);
+      }
     } else {
       // Pembayaran langsung (QRIS atau Tunai offline terkonfirmasi)
       setCitizens(prev => prev.map(c => {
@@ -213,10 +337,18 @@ export default function App() {
         petugas: paymentDetails.metode === 'tunai' ? 'Hj. Endang (Setor Tunai)' : 'Sistem QRIS RT 007'
       };
       setTransactions(prev => [newTrx, ...prev]);
+      try {
+        await api.transactions.create(newTrx);
+        if (citizenId) {
+          await api.citizens.toggleIuran(citizenId);
+        }
+      } catch (err) {
+        console.warn('API error recording transaction:', err);
+      }
     }
   };
 
-  const handleApproveTransfer = (verificationId, catatanBendahara = '') => {
+  const handleApproveTransfer = async (verificationId, catatanBendahara = '') => {
     let verifiedItem = null;
     setTransferVerifications(prev => prev.map(item => {
       if (item.id === verificationId) {
@@ -250,32 +382,63 @@ export default function App() {
         petugas: 'Hj. Endang (Bendahara)'
       };
       setTransactions(prev => [newTrx, ...prev]);
+
+      try {
+        await api.transfers.verify(verificationId, {
+          status: 'Terverifikasi',
+          catatanBendahara: catatanBendahara || 'Pembayaran valid & telah masuk mutasi kas RT 007'
+        });
+      } catch (err) {
+        console.warn('API error approving transfer:', err);
+      }
     }
   };
 
-  const handleRejectTransfer = (verificationId, catatanPenolakan = '') => {
+  const handleRejectTransfer = async (verificationId, catatanPenolakan = '') => {
+    const reason = catatanPenolakan || 'Bukti transfer tidak valid atau dana belum masuk rekening RT.';
     setTransferVerifications(prev => prev.map(item => {
       if (item.id === verificationId) {
         return {
           ...item,
           status: 'Ditolak',
-          catatanBendahara: catatanPenolakan || 'Bukti transfer tidak valid atau dana belum masuk rekening RT.'
+          catatanBendahara: reason
         };
       }
       return item;
     }));
+    try {
+      await api.transfers.verify(verificationId, {
+        status: 'Ditolak',
+        catatanBendahara: reason
+      });
+    } catch (err) {
+      console.warn('API error rejecting transfer:', err);
+    }
   };
 
-  const handleAddAnnouncement = (newAnn) => {
+  const handleAddAnnouncement = async (newAnn) => {
     setAnnouncements(prev => [newAnn, ...prev]);
+    try {
+      const res = await api.announcements.create(newAnn);
+      if (res?.data) {
+        setAnnouncements(prev => prev.map(a => a.id === newAnn.id ? res.data : a));
+      }
+    } catch (err) {
+      console.warn('API error creating announcement:', err);
+    }
   };
 
   const handleUpdateAnnouncement = (id, updatedData) => {
     setAnnouncements(prev => prev.map(a => a.id === id ? { ...a, ...updatedData } : a));
   };
 
-  const handleDeleteAnnouncement = (id) => {
+  const handleDeleteAnnouncement = async (id) => {
     setAnnouncements(prev => prev.filter(a => a.id !== id));
+    try {
+      await api.announcements.delete(id);
+    } catch (err) {
+      console.warn('API error deleting announcement:', err);
+    }
   };
 
   const handleToggleAnnouncement = (id) => {
@@ -285,6 +448,16 @@ export default function App() {
       }
       return a;
     }));
+  };
+
+  const handleLogout = async () => {
+    try {
+      await api.auth.logout();
+    } catch (err) {
+      // ignore
+    }
+    localStorage.removeItem('auth_token');
+    setCurrentUser(null);
   };
 
   // Jika belum login, tampilkan Halaman Login
@@ -311,7 +484,7 @@ export default function App() {
           onAddSurat={handleAddSurat}
           onOpenSuratModal={(surat) => setSelectedSuratForPrint(surat)}
           onPayIuran={handleCitizenPayIuran}
-          onLogout={() => setCurrentUser(null)}
+          onLogout={handleLogout}
         />
 
         {selectedSuratForPrint && (
@@ -339,7 +512,7 @@ export default function App() {
         onSelectSubMenu={handleSelectSubMenu}
         currentUserRole={currentUserRole}
         currentUserName={currentUser.nama}
-        onLogout={() => setCurrentUser(null)}
+        onLogout={handleLogout}
       />
 
       {/* 3. Main Content Body */}
