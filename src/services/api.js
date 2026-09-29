@@ -145,6 +145,7 @@ export const api = {
         method: 'PATCH',
         body: JSON.stringify(statusData),
       }),
+    verifyToken: (token) => request(`/surat/verify/${token}`),
   },
 
   // Informasi & Agenda RT

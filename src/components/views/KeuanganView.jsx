@@ -2,8 +2,10 @@ import React, { useState } from 'react';
 import { 
   Wallet, ArrowDownRight, ArrowUpRight, Plus, 
   Calendar, FileSpreadsheet, CheckCircle2, Clock, Filter,
-  Eye, XCircle, Check, AlertCircle, X, ShieldCheck, CreditCard, ExternalLink, QrCode, Search, Zap
+  Eye, XCircle, Check, AlertCircle, X, ShieldCheck, CreditCard, ExternalLink, QrCode, Search, Zap,
+  Download, RotateCcw
 } from 'lucide-react';
+import { exportKasLedgerToCsv, exportIuranToCsv } from '../../utils/exportUtils';
 
 export default function KeuanganView({ 
   transactions, 
@@ -19,6 +21,8 @@ export default function KeuanganView({
 }) {
   const [showAddTrx, setShowAddTrx] = useState(false);
   const [filterKategori, setFilterKategori] = useState('Semua');
+  const [filterBulanKas, setFilterBulanKas] = useState('Semua');
+  const [searchKas, setSearchKas] = useState('');
   const [selectedProof, setSelectedProof] = useState(null);
   const [rejectingTransfer, setRejectingTransfer] = useState(null);
   const [rejectTransferReason, setRejectTransferReason] = useState('');
@@ -32,14 +36,45 @@ export default function KeuanganView({
     petugas: 'Hj. Endang (Bendahara)'
   });
 
-  const totalMasuk = transactions.filter(t => t.kategori === 'Pemasukan').reduce((a, b) => a + b.nominal, 0);
-  const totalKeluar = transactions.filter(t => t.kategori === 'Pengeluaran').reduce((a, b) => a + b.nominal, 0);
+  const totalMasuk = transactions.filter(t => t.kategori === 'Pemasukan').reduce((a, b) => a + Number(b.nominal || 0), 0);
+  const totalKeluar = transactions.filter(t => t.kategori === 'Pengeluaran').reduce((a, b) => a + Number(b.nominal || 0), 0);
   const saldo = 14520000 + totalMasuk - totalKeluar;
 
+  // Extract unique months from transactions dynamically
+  const availablePeriods = Array.from(new Set(
+    transactions.map(t => {
+      if (!t.tanggal) return null;
+      const parts = t.tanggal.split(' ');
+      if (parts.length >= 3) {
+        return `${parts[1]} ${parts[2]}`;
+      }
+      return null;
+    }).filter(Boolean)
+  ));
+
   const filteredTrx = transactions.filter(t => {
-    if (filterKategori === 'Semua') return true;
-    return t.kategori === filterKategori;
+    if (filterKategori !== 'Semua' && t.kategori !== filterKategori) return false;
+    
+    if (filterBulanKas !== 'Semua') {
+      if (!t.tanggal?.toLowerCase().includes(filterBulanKas.toLowerCase())) return false;
+    }
+
+    if (searchKas.trim()) {
+      const q = searchKas.toLowerCase();
+      const match = 
+        t.id?.toLowerCase().includes(q) ||
+        t.sumber?.toLowerCase().includes(q) ||
+        t.keterangan?.toLowerCase().includes(q) ||
+        t.petugas?.toLowerCase().includes(q) ||
+        t.tanggal?.toLowerCase().includes(q);
+      if (!match) return false;
+    }
+
+    return true;
   });
+
+  const filteredTotalMasuk = filteredTrx.filter(t => t.kategori === 'Pemasukan').reduce((a, b) => a + Number(b.nominal || 0), 0);
+  const filteredTotalKeluar = filteredTrx.filter(t => t.kategori === 'Pengeluaran').reduce((a, b) => a + Number(b.nominal || 0), 0);
 
   const handleSubmitTrx = (e) => {
     e.preventDefault();
@@ -153,23 +188,52 @@ export default function KeuanganView({
           </button>
         </div>
 
-        <button 
-          onClick={() => setShowAddTrx(true)}
-          style={{
-            background: '#3B7594',
-            color: '#ffffff',
-            padding: '10px 18px',
-            borderRadius: '10px',
-            fontSize: '13px',
-            fontWeight: 700,
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            boxShadow: '0 4px 12px rgba(59, 117, 148, 0.3)'
-          }}
-        >
-          <Plus size={18} /> Catat Transaksi Baru
-        </button>
+        <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
+          <button 
+            type="button"
+            onClick={() => exportKasLedgerToCsv(transactions, {
+              periode: 'Semua Periode',
+              filename: `Buku_Kas_RT007_${new Date().toISOString().split('T')[0]}.csv`
+            })}
+            title="Unduh seluruh rekap buku kas RT ke format file Excel / CSV"
+            style={{
+              background: '#059669',
+              color: '#ffffff',
+              padding: '10px 18px',
+              borderRadius: '10px',
+              fontSize: '13px',
+              fontWeight: 700,
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              border: 'none',
+              cursor: 'pointer',
+              boxShadow: '0 4px 12px rgba(5, 150, 105, 0.25)'
+            }}
+          >
+            <Download size={16} /> Unduh Rekap Kas (CSV)
+          </button>
+
+          <button 
+            onClick={() => setShowAddTrx(true)}
+            style={{
+              background: '#3B7594',
+              color: '#ffffff',
+              padding: '10px 18px',
+              borderRadius: '10px',
+              fontSize: '13px',
+              fontWeight: 700,
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              border: 'none',
+              cursor: 'pointer',
+              boxShadow: '0 4px 12px rgba(59, 117, 148, 0.3)'
+            }}
+          >
+            <Plus size={18} /> Catat Transaksi Baru
+          </button>
+        </div>
       </div>
 
       {/* Pill header matching wireframe Image 5 left */}
@@ -194,15 +258,19 @@ export default function KeuanganView({
             </div>
           </div>
           <div style={{ background: '#262525', padding: '16px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.08)' }}>
-            <span style={{ fontSize: '12px', color: '#94a3b8' }}>Pemasukan (Maret 2026)</span>
+            <span style={{ fontSize: '12px', color: '#94a3b8' }}>
+              Pemasukan {filterBulanKas !== 'Semua' ? `(${filterBulanKas})` : 'Total'}
+            </span>
             <div style={{ fontSize: '26px', fontWeight: 800, color: '#4ade80', marginTop: '4px' }}>
-              + Rp {totalMasuk.toLocaleString('id-ID')}
+              + Rp {(filterBulanKas !== 'Semua' ? filteredTotalMasuk : totalMasuk).toLocaleString('id-ID')}
             </div>
           </div>
           <div style={{ background: '#262525', padding: '16px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.08)' }}>
-            <span style={{ fontSize: '12px', color: '#94a3b8' }}>Pengeluaran (Maret 2026)</span>
+            <span style={{ fontSize: '12px', color: '#94a3b8' }}>
+              Pengeluaran {filterBulanKas !== 'Semua' ? `(${filterBulanKas})` : 'Total'}
+            </span>
             <div style={{ fontSize: '26px', fontWeight: 800, color: '#f87171', marginTop: '4px' }}>
-              - Rp {totalKeluar.toLocaleString('id-ID')}
+              - Rp {(filterBulanKas !== 'Semua' ? filteredTotalKeluar : totalKeluar).toLocaleString('id-ID')}
             </div>
           </div>
         </div>
@@ -210,13 +278,36 @@ export default function KeuanganView({
         {activeSubMenu === 'iuran' ? (
           /* TAB CATATAN IURAN WARGA */
           <div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
-              <h4 style={{ fontSize: '16px', fontWeight: 700, color: '#ffffff' }}>
-                Status Pembayaran Iuran Warga per KK (Rp 60.000 / Bulan)
-              </h4>
-              <span style={{ fontSize: '12px', color: '#cbd5e1' }}>
-                Rincian: Kebersihan Rp 25.000 + Keamanan Rp 35.000
-              </span>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', flexWrap: 'wrap', gap: '10px' }}>
+              <div>
+                <h4 style={{ fontSize: '16px', fontWeight: 700, color: '#ffffff', margin: 0 }}>
+                  Status Pembayaran Iuran Warga per KK (Rp 60.000 / Bulan)
+                </h4>
+                <span style={{ fontSize: '12px', color: '#cbd5e1' }}>
+                  Rincian: Kebersihan Rp 25.000 + Keamanan Rp 35.000
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={() => exportIuranToCsv(citizens, 'Maret 2026')}
+                title="Unduh rekapitulasi pembayaran iuran warga ke format file Excel / CSV"
+                style={{
+                  background: '#059669',
+                  color: '#ffffff',
+                  padding: '8px 14px',
+                  borderRadius: '8px',
+                  fontSize: '12.5px',
+                  fontWeight: 700,
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  border: 'none',
+                  cursor: 'pointer',
+                  boxShadow: '0 2px 8px rgba(5, 150, 105, 0.3)'
+                }}
+              >
+                <Download size={15} /> Unduh Data Iuran (CSV)
+              </button>
             </div>
 
             <div style={{ background: '#262525', borderRadius: '12px', overflowX: 'auto' }}>
@@ -547,30 +638,140 @@ export default function KeuanganView({
         ) : (
           /* TAB REKAPITULASI KAS & LAPORAN */
           <div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', flexWrap: 'wrap', gap: '10px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <Filter size={16} color="#94a3b8" />
-                <select 
-                  value={filterKategori}
-                  onChange={(e) => setFilterKategori(e.target.value)}
-                  style={{
-                    background: '#262525',
-                    color: '#ffffff',
-                    padding: '6px 12px',
-                    borderRadius: '8px',
-                    border: '1px solid rgba(255,255,255,0.15)',
-                    fontSize: '13px'
-                  }}
-                >
-                  <option value="Semua">Semua Kategori (Pemasukan & Pengeluaran)</option>
-                  <option value="Pemasukan">Khusus Pemasukan</option>
-                  <option value="Pengeluaran">Khusus Pengeluaran</option>
-                </select>
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              marginBottom: '16px',
+              flexWrap: 'wrap',
+              gap: '12px',
+              background: '#1f1e1e',
+              padding: '12px 16px',
+              borderRadius: '10px',
+              border: '1px solid rgba(255,255,255,0.06)'
+            }}>
+              {/* Left filters: Search, Periode, Kategori */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap', flex: '1 1 500px' }}>
+                <div style={{ position: 'relative', minWidth: '180px', flex: '1 1 180px' }}>
+                  <Search size={15} color="#94a3b8" style={{ position: 'absolute', left: '10px', top: '10px' }} />
+                  <input 
+                    type="text"
+                    value={searchKas}
+                    onChange={(e) => setSearchKas(e.target.value)}
+                    placeholder="Cari transaksi, sumber..."
+                    style={{
+                      background: '#262525',
+                      color: '#ffffff',
+                      padding: '7px 10px 7px 32px',
+                      borderRadius: '8px',
+                      border: '1px solid rgba(255,255,255,0.15)',
+                      fontSize: '12.5px',
+                      width: '100%'
+                    }}
+                  />
+                </div>
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <Calendar size={15} color="#94a3b8" />
+                  <select 
+                    value={filterBulanKas}
+                    onChange={(e) => setFilterBulanKas(e.target.value)}
+                    style={{
+                      background: '#262525',
+                      color: '#ffffff',
+                      padding: '7px 10px',
+                      borderRadius: '8px',
+                      border: '1px solid rgba(255,255,255,0.15)',
+                      fontSize: '12.5px'
+                    }}
+                  >
+                    <option value="Semua">Semua Periode Bulan</option>
+                    {availablePeriods.map(p => (
+                      <option key={p} value={p}>{p}</option>
+                    ))}
+                    {!availablePeriods.includes('Maret 2026') && <option value="Maret 2026">Maret 2026</option>}
+                    {!availablePeriods.includes('Februari 2026') && <option value="Februari 2026">Februari 2026</option>}
+                    {!availablePeriods.includes('Januari 2026') && <option value="Januari 2026">Januari 2026</option>}
+                  </select>
+                </div>
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <Filter size={15} color="#94a3b8" />
+                  <select 
+                    value={filterKategori}
+                    onChange={(e) => setFilterKategori(e.target.value)}
+                    style={{
+                      background: '#262525',
+                      color: '#ffffff',
+                      padding: '7px 10px',
+                      borderRadius: '8px',
+                      border: '1px solid rgba(255,255,255,0.15)',
+                      fontSize: '12.5px'
+                    }}
+                  >
+                    <option value="Semua">Semua Kategori</option>
+                    <option value="Pemasukan">Pemasukan Saja</option>
+                    <option value="Pengeluaran">Pengeluaran Saja</option>
+                  </select>
+                </div>
+
+                {(filterKategori !== 'Semua' || filterBulanKas !== 'Semua' || searchKas) && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setFilterKategori('Semua');
+                      setFilterBulanKas('Semua');
+                      setSearchKas('');
+                    }}
+                    title="Reset semua filter kas"
+                    style={{
+                      background: 'rgba(255,255,255,0.08)',
+                      color: '#cbd5e1',
+                      border: '1px solid rgba(255,255,255,0.15)',
+                      padding: '7px 10px',
+                      borderRadius: '8px',
+                      fontSize: '12px',
+                      cursor: 'pointer',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '4px'
+                    }}
+                  >
+                    <RotateCcw size={12} /> Reset
+                  </button>
+                )}
               </div>
 
-              <span style={{ fontSize: '12.5px', color: '#cbd5e1' }}>
-                Total {filteredTrx.length} catatan transaksi
-              </span>
+              {/* Right action: CSV Export and counter */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <span style={{ fontSize: '12px', color: '#94a3b8' }}>
+                  {filteredTrx.length} Catatan
+                </span>
+                <button
+                  type="button"
+                  onClick={() => exportKasLedgerToCsv(filteredTrx, {
+                    periode: `${filterBulanKas !== 'Semua' ? filterBulanKas : 'Semua Periode'}${filterKategori !== 'Semua' ? ` (${filterKategori})` : ''}`,
+                    filename: `Buku_Kas_RT007_${filterBulanKas !== 'Semua' ? filterBulanKas.replace(/\s+/g, '_') : 'Semua'}.csv`
+                  })}
+                  title="Unduh Rekap Buku Kas ke File CSV / Excel"
+                  style={{
+                    background: '#059669',
+                    color: '#ffffff',
+                    padding: '8px 14px',
+                    borderRadius: '8px',
+                    fontSize: '12.5px',
+                    fontWeight: 700,
+                    border: 'none',
+                    cursor: 'pointer',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    boxShadow: '0 2px 8px rgba(5, 150, 105, 0.3)'
+                  }}
+                >
+                  <Download size={15} /> Unduh Rekap Kas (CSV)
+                </button>
+              </div>
             </div>
 
             <div style={{ background: '#262525', borderRadius: '12px', overflowX: 'auto' }}>
@@ -586,32 +787,40 @@ export default function KeuanganView({
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredTrx.map((trx) => (
-                    <tr key={trx.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-                      <td style={{ padding: '12px 14px' }}>
-                        <div style={{ fontWeight: 700 }}>{trx.id}</div>
-                        <div style={{ fontSize: '11px', color: '#94a3b8' }}>{trx.tanggal}</div>
+                  {filteredTrx.length === 0 ? (
+                    <tr>
+                      <td colSpan={6} style={{ padding: '36px 16px', textAlign: 'center', color: '#94a3b8' }}>
+                        Tidak ada transaksi kas yang sesuai dengan filter pencarian.
                       </td>
-                      <td style={{ padding: '12px 14px' }}>
-                        <span style={{
-                          padding: '3px 8px',
-                          borderRadius: '6px',
-                          fontSize: '11px',
-                          fontWeight: 700,
-                          background: trx.kategori === 'Pemasukan' ? 'rgba(34, 197, 94, 0.2)' : 'rgba(239, 68, 68, 0.2)',
-                          color: trx.kategori === 'Pemasukan' ? '#4ade80' : '#f87171'
-                        }}>
-                          {trx.kategori}
-                        </span>
-                      </td>
-                      <td style={{ padding: '12px 14px', fontWeight: 600 }}>{trx.sumber}</td>
-                      <td style={{ padding: '12px 14px', color: '#cbd5e1' }}>{trx.keterangan}</td>
-                      <td style={{ padding: '12px 14px', fontWeight: 800, color: trx.kategori === 'Pemasukan' ? '#4ade80' : '#fca5a5' }}>
-                        {trx.kategori === 'Pemasukan' ? '+' : '-'} Rp {trx.nominal.toLocaleString('id-ID')}
-                      </td>
-                      <td style={{ padding: '12px 14px', color: '#94a3b8' }}>{trx.petugas}</td>
                     </tr>
-                  ))}
+                  ) : (
+                    filteredTrx.map((trx) => (
+                      <tr key={trx.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+                        <td style={{ padding: '12px 14px' }}>
+                          <div style={{ fontWeight: 700 }}>{trx.id}</div>
+                          <div style={{ fontSize: '11px', color: '#94a3b8' }}>{trx.tanggal}</div>
+                        </td>
+                        <td style={{ padding: '12px 14px' }}>
+                          <span style={{
+                            padding: '3px 8px',
+                            borderRadius: '6px',
+                            fontSize: '11px',
+                            fontWeight: 700,
+                            background: trx.kategori === 'Pemasukan' ? 'rgba(34, 197, 94, 0.2)' : 'rgba(239, 68, 68, 0.2)',
+                            color: trx.kategori === 'Pemasukan' ? '#4ade80' : '#f87171'
+                          }}>
+                            {trx.kategori}
+                          </span>
+                        </td>
+                        <td style={{ padding: '12px 14px', fontWeight: 600 }}>{trx.sumber}</td>
+                        <td style={{ padding: '12px 14px', color: '#cbd5e1' }}>{trx.keterangan}</td>
+                        <td style={{ padding: '12px 14px', fontWeight: 800, color: trx.kategori === 'Pemasukan' ? '#4ade80' : '#fca5a5' }}>
+                          {trx.kategori === 'Pemasukan' ? '+' : '-'} Rp {trx.nominal.toLocaleString('id-ID')}
+                        </td>
+                        <td style={{ padding: '12px 14px', color: '#94a3b8' }}>{trx.petugas}</td>
+                      </tr>
+                    ))
+                  )}
                 </tbody>
               </table>
             </div>

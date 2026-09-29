@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { Printer, X, CheckCircle, FileText, XCircle, AlertCircle, ShieldCheck } from 'lucide-react';
+import { Printer, X, CheckCircle, FileText, XCircle, AlertCircle, ShieldCheck, ExternalLink, QrCode } from 'lucide-react';
 import { RT_INFO } from '../../data/mockData';
 import { maskNik } from '../../utils/privacyUtils';
 
-export default function SuratPrintModal({ surat, onClose, onApprove, onReject }) {
+export default function SuratPrintModal({ surat, onClose, onApprove, onReject, onOpenVerify }) {
   const [showRejectForm, setShowRejectForm] = useState(false);
   const [rejectReason, setRejectReason] = useState('');
   const [maskNikInPrint, setMaskNikInPrint] = useState(false);
@@ -13,6 +13,10 @@ export default function SuratPrintModal({ surat, onClose, onApprove, onReject })
   const handlePrint = () => {
     window.print();
   };
+
+  const verifyToken = surat.verifyToken || surat.verify_token || surat.id;
+  const verifyUrl = `${window.location.origin}?verify=${verifyToken}`;
+  const qrImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&margin=2&data=${encodeURIComponent(verifyUrl)}`;
 
   const handleConfirmReject = () => {
     if (!rejectReason.trim()) {
@@ -94,6 +98,31 @@ export default function SuratPrintModal({ surat, onClose, onApprove, onReject })
                 )}
               </>
             )}
+            <button
+              type="button"
+              onClick={() => {
+                if (onOpenVerify) {
+                  onOpenVerify(verifyToken);
+                } else {
+                  window.open(`?verify=${verifyToken}`, '_blank');
+                }
+              }}
+              style={{
+                background: '#0284c7',
+                color: '#ffffff',
+                padding: '6px 12px',
+                borderRadius: '8px',
+                fontSize: '12px',
+                fontWeight: 700,
+                display: 'flex',
+                alignItems: 'center',
+                gap: '5px',
+                cursor: 'pointer',
+                border: 'none'
+              }}
+            >
+              <ExternalLink size={14} /> Cek Verifikasi Publik
+            </button>
             <label style={{
               display: 'flex',
               alignItems: 'center',
@@ -330,27 +359,51 @@ export default function SuratPrintModal({ surat, onClose, onApprove, onReject })
             </p>
           </div>
 
-          {/* TANDA TANGAN */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '30px', paddingRight: '20px', paddingLeft: '20px' }}>
-            <div style={{ textAlign: 'center', width: '200px' }}>
+          {/* TANDA TANGAN 3 KOLOM: Pemohon | QR Verifikasi SHA-256 | Ketua RT 007 */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 140px 1fr', alignItems: 'flex-start', marginTop: '25px', paddingRight: '10px', paddingLeft: '10px' }}>
+            <div style={{ textAlign: 'center' }}>
               <p style={{ fontSize: '13px', margin: 0 }}>Mengetahui,</p>
-              <p style={{ fontSize: '13px', fontWeight: 'bold', margin: '2px 0 60px' }}>Pemohon</p>
+              <p style={{ fontSize: '13px', fontWeight: 'bold', margin: '2px 0 55px' }}>Pemohon</p>
               <p style={{ fontSize: '13px', fontWeight: 'bold', textDecoration: 'underline', margin: 0 }}>
                 {surat.pemohon}
               </p>
             </div>
 
-            <div style={{ textAlign: 'center', width: '240px', position: 'relative' }}>
+            {/* QR Verifikasi Keaslian Dokumen Resmi */}
+            <div style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+              <div style={{
+                padding: '4px',
+                background: '#ffffff',
+                border: '1px solid #cbd5e1',
+                borderRadius: '6px',
+                display: 'inline-block',
+                boxShadow: '0 2px 5px rgba(0,0,0,0.05)'
+              }}>
+                <img 
+                  src={qrImageUrl} 
+                  alt="QR Verifikasi Surat" 
+                  style={{ width: '85px', height: '85px', display: 'block' }} 
+                />
+              </div>
+              <span style={{ fontSize: '8px', color: '#475569', fontWeight: 800, marginTop: '4px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                Pindai Keaslian
+              </span>
+              <span style={{ fontSize: '7.5px', color: '#0284c7', fontFamily: 'monospace', fontWeight: 700 }}>
+                SHA-256 VERIFIED
+              </span>
+            </div>
+
+            <div style={{ textAlign: 'center', position: 'relative' }}>
               <p style={{ fontSize: '13px', margin: 0 }}>Bekasi, {surat.tanggalPengajuan}</p>
-              <p style={{ fontSize: '13px', fontWeight: 'bold', margin: '2px 0 60px' }}>
+              <p style={{ fontSize: '13px', fontWeight: 'bold', margin: '2px 0 55px' }}>
                 Ketua RT 007 / RW 030
               </p>
 
               {/* Digital Stamp Simulation */}
               <div style={{
                 position: 'absolute',
-                top: '35px',
-                left: '25px',
+                top: '30px',
+                left: '20px',
                 border: '2px dashed #3B7594',
                 color: '#3B7594',
                 borderRadius: '50%',

@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import { 
   Users, UserCheck, Home, Baby, UserPlus, Search, Filter, 
-  Calendar, RotateCcw, Eye, EyeOff, Trash2, Edit3, MapPin, Phone, ShieldCheck, Lock 
+  Calendar, RotateCcw, Eye, EyeOff, Trash2, Edit3, MapPin, Phone, ShieldCheck, Lock, Download 
 } from 'lucide-react';
 import { DEMOGRAFI_DATA } from '../../data/mockData';
 import { maskNik, maskKk, maskPhone } from '../../utils/privacyUtils';
+import { exportCitizensToCsv } from '../../utils/exportUtils';
 
 const NAMA_BULAN = [
   { code: '01', name: 'Januari' },
@@ -26,7 +27,8 @@ export default function DataWargaView({
   activeSubMenu, 
   onSelectSubMenu, 
   onOpenAddModal, 
-  onDeleteCitizen 
+  onDeleteCitizen,
+  onEditCitizen 
 }) {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterBulan, setFilterBulan] = useState('Semua');
@@ -100,6 +102,69 @@ export default function DataWargaView({
 
   return (
     <div className="data-warga-page">
+      {/* Top Header: Title & Actions */}
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        flexWrap: 'wrap',
+        gap: '16px',
+        marginBottom: '20px'
+      }}>
+        <div>
+          <h2 style={{ fontSize: '24px', fontWeight: 800, color: '#1e293b', margin: 0 }}>
+            Data Kependudukan RT 007
+          </h2>
+          <p style={{ fontSize: '13px', color: '#64748b', margin: '4px 0 0 0' }}>
+            Data kependudukan warga, demografi, dan status domisili RT 007 / RW 030
+          </p>
+        </div>
+
+        <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
+          <button 
+            type="button"
+            onClick={() => exportCitizensToCsv(filteredCitizens)}
+            title="Unduh seluruh data kependudukan ke format file Excel / CSV"
+            style={{
+              background: '#059669',
+              color: '#ffffff',
+              padding: '10px 18px',
+              borderRadius: '10px',
+              fontSize: '13.5px',
+              fontWeight: 700,
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              border: 'none',
+              cursor: 'pointer',
+              boxShadow: '0 4px 12px rgba(5, 150, 105, 0.25)'
+            }}
+          >
+            <Download size={18} /> Unduh Data Warga (CSV)
+          </button>
+
+          <button 
+            onClick={onOpenAddModal}
+            style={{
+              background: '#3B7594',
+              color: '#ffffff',
+              padding: '10px 18px',
+              borderRadius: '10px',
+              fontSize: '13.5px',
+              fontWeight: 700,
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              border: 'none',
+              cursor: 'pointer',
+              boxShadow: '0 4px 12px rgba(59, 117, 148, 0.3)'
+            }}
+          >
+            <UserPlus size={18} /> Tambah Warga Baru
+          </button>
+        </div>
+      </div>
+
       {/* 8 Yellow Cards (Grid 4x2, EXACTLY MATCHES Image 4) */}
       <div className="yellow-cards-grid-8">
         <div className="yellow-card" style={{ minHeight: '120px', padding: '18px 20px' }}>
@@ -214,24 +279,49 @@ export default function DataWargaView({
             </button>
           </div>
 
-          {/* Action button */}
-          <button 
-            onClick={onOpenAddModal}
-            style={{
-              background: '#3B7594',
-              color: '#ffffff',
-              padding: '10px 18px',
-              borderRadius: '10px',
-              fontSize: '13.5px',
-              fontWeight: 700,
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              boxShadow: '0 4px 12px rgba(59, 117, 148, 0.3)'
-            }}
-          >
-            <UserPlus size={18} /> Tambah Warga Baru
-          </button>
+          {/* Action buttons */}
+          <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
+            <button 
+              type="button"
+              onClick={() => exportCitizensToCsv(filteredCitizens)}
+              title="Unduh seluruh data kependudukan terfilter ke format file Excel / CSV"
+              style={{
+                background: '#059669',
+                color: '#ffffff',
+                padding: '10px 16px',
+                borderRadius: '10px',
+                fontSize: '13px',
+                fontWeight: 700,
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                border: 'none',
+                cursor: 'pointer',
+                boxShadow: '0 4px 12px rgba(5, 150, 105, 0.25)'
+              }}
+            >
+              <Download size={16} /> Unduh CSV Warga ({filteredCitizens.length})
+            </button>
+            <button 
+              onClick={onOpenAddModal}
+              style={{
+                background: '#3B7594',
+                color: '#ffffff',
+                padding: '10px 18px',
+                borderRadius: '10px',
+                fontSize: '13.5px',
+                fontWeight: 700,
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                border: 'none',
+                cursor: 'pointer',
+                boxShadow: '0 4px 12px rgba(59, 117, 148, 0.3)'
+              }}
+            >
+              <UserPlus size={18} /> Tambah Warga Baru
+            </button>
+          </div>
         </div>
 
         {/* Row 2: Search Bar & Filters (Blok, Bulan, Tahun) */}
@@ -582,10 +672,26 @@ export default function DataWargaView({
                             padding: '6px',
                             borderRadius: '6px',
                             background: '#e0f2fe',
-                            color: '#0284c7'
+                            color: '#0284c7',
+                            border: 'none',
+                            cursor: 'pointer'
                           }}
                         >
                           <Eye size={15} />
+                        </button>
+                        <button 
+                          onClick={() => onEditCitizen && onEditCitizen(c)}
+                          title="Edit Data Kependudukan"
+                          style={{
+                            padding: '6px',
+                            borderRadius: '6px',
+                            background: '#fef3c7',
+                            color: '#d97706',
+                            border: 'none',
+                            cursor: 'pointer'
+                          }}
+                        >
+                          <Edit3 size={15} />
                         </button>
                         <button 
                           onClick={() => onDeleteCitizen(c.id)}
@@ -594,7 +700,9 @@ export default function DataWargaView({
                             padding: '6px',
                             borderRadius: '6px',
                             background: '#fee2e2',
-                            color: '#dc2626'
+                            color: '#dc2626',
+                            border: 'none',
+                            cursor: 'pointer'
                           }}
                         >
                           <Trash2 size={15} />
@@ -702,7 +810,29 @@ export default function DataWargaView({
               </div>
             </div>
 
-            <div style={{ marginTop: '24px', display: 'flex', justifyContent: 'flex-end' }}>
+            <div style={{ marginTop: '24px', display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+              <button 
+                onClick={() => {
+                  const citizen = selectedCitizen;
+                  setSelectedCitizen(null);
+                  if (onEditCitizen) onEditCitizen(citizen);
+                }}
+                style={{
+                  background: '#fef3c7',
+                  color: '#d97706',
+                  padding: '8px 16px',
+                  borderRadius: '8px',
+                  fontSize: '13px',
+                  fontWeight: 700,
+                  border: '1px solid #fde68a',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px'
+                }}
+              >
+                <Edit3 size={15} /> Edit Data Warga
+              </button>
               <button 
                 onClick={() => setSelectedCitizen(null)}
                 style={{
@@ -711,7 +841,9 @@ export default function DataWargaView({
                   padding: '8px 18px',
                   borderRadius: '8px',
                   fontSize: '13px',
-                  fontWeight: 600
+                  fontWeight: 600,
+                  border: 'none',
+                  cursor: 'pointer'
                 }}
               >
                 Tutup

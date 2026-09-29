@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { 
   FileText, CheckCircle2, Clock, Printer, Plus, 
-  Search, Eye, EyeOff, ShieldCheck, AlertCircle, XCircle, X
+  Search, Eye, EyeOff, ShieldCheck, AlertCircle, XCircle, X,
+  QrCode, ExternalLink
 } from 'lucide-react';
 import { maskNik } from '../../utils/privacyUtils';
 
@@ -13,7 +14,8 @@ export default function SuratView({
   onApproveSurat,
   onRejectSurat,
   onAddSurat,
-  currentUserRole = 'Ketua RT'
+  currentUserRole = 'Ketua RT',
+  onOpenVerify
 }) {
   const [searchTerm, setSearchTerm] = useState('');
   const [showAddSuratModal, setShowAddSuratModal] = useState(false);
@@ -34,10 +36,10 @@ export default function SuratView({
 
   const filteredSurat = suratList.filter(s => {
     if (activeSubMenu === 'masuk' && s.status !== 'Menunggu Verifikasi') {
-      return true; // show all or filter if user selects
+      return false; // Hanya tampilkan surat yang membutuhkan verifikasi
     }
-    if (activeSubMenu === 'arsip' && s.status !== 'Selesai') {
-      return false;
+    if (activeSubMenu === 'arsip' && s.status !== 'Disetujui' && s.status !== 'Selesai') {
+      return false; // Hanya tampilkan arsip surat yang telah disetujui/selesai
     }
     return (
       s.jenisSurat.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -290,6 +292,27 @@ export default function SuratView({
                 >
                   <Printer size={15} /> Cetak & Pratinjau
                 </button>
+
+                {(srt.status === 'Disetujui' || srt.status === 'Selesai') && onOpenVerify && (
+                  <button 
+                    onClick={() => onOpenVerify(srt.verifyToken || srt.verify_token || srt.id)}
+                    style={{
+                      background: 'rgba(2, 132, 199, 0.15)',
+                      color: '#0284c7',
+                      border: '1px solid #0284c7',
+                      padding: '8px 14px',
+                      borderRadius: '8px',
+                      fontSize: '12.5px',
+                      fontWeight: 700,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    <QrCode size={15} /> Verifikasi SHA-256
+                  </button>
+                )}
 
                 {canPengajuanSurat && srt.status === 'Menunggu Verifikasi' && (
                   <>

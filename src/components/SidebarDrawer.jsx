@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, ChevronRight, Home, Users, Wallet, FileText, Settings, UserCheck, Bell, LogOut } from 'lucide-react';
+import { X, ChevronRight, Home, Users, Wallet, FileText, Settings, UserCheck, Bell, LogOut, History } from 'lucide-react';
 
 export default function SidebarDrawer({ 
   isOpen, 
@@ -238,6 +238,22 @@ export default function SidebarDrawer({
               <span>Manajemen Pengguna / User Settings</span>
             </div>
           </div>
+
+          {/* 7. Audit Trail & Log Aktivitas (Khusus Pengurus RT) */}
+          {currentUserRole !== 'Warga' && (
+            <div 
+              className={`nav-section-title ${activeMenu === 'audit' ? 'active' : ''}`}
+              onClick={() => {
+                onSelectMenu('audit');
+                onClose();
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <History size={18} />
+                <span>Audit Trail & Log Aktivitas</span>
+              </div>
+            </div>
+          )}
         </nav>
 
         {/* Tombol Keluar di atas dan di luar kotak profil footer */}

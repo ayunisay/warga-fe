@@ -185,7 +185,8 @@ Untuk mengubah prototipe frontend ini menjadi aplikasi siap pakai di lingkungan 
 | **Perlindungan Data (UU PDP)** | Enkripsi kolom sensitif (NIK, KK) di database (*encryption at rest*), serta implementasi *data masking* pada tampilan warga. | AES-256 (CBC/HMAC Blind Index) + Frontend UI Masking. | ✅ Selesai |
 | **Penyimpanan Berkas Bukti** | Mengunggah foto bukti transfer dan scan KTP ke *Storage* lokal/cloud (storage symlink aktif). | Laravel Storage Symlink / MinIO / S3. | ✅ Selesai (Local Storage) |
 | **Payment Gateway Otomatis** | Menggantikan upload struk manual dengan integrasi payment gateway resmi agar verifikasi transfer bank dan QRIS berjalan otomatis melalui *Webhook callback*. | Midtrans / Tripay (Dynamic QRIS, Virtual Account BCA/Mandiri/BNI/BRI & Webhook Settlement). | ✅ Selesai |
-| **Verifikasi Keaslian Surat** | Menghasilkan QR code resmi pada surat pengantar yang ketika dipindai kamera HP akan membuka laman verifikasi publik backend: `https://domain-rt.id/verify-surat/{hash}` untuk membuktikan keaslian surat tanpa bisa dimanipulasi warga. | SHA-256 token verification endpoint. | ⏳ Roadmap Selanjutnya |
+| **Verifikasi Keaslian Surat** | Menghasilkan QR code resmi pada surat pengantar yang ketika dipindai kamera HP akan membuka laman verifikasi publik backend: `https://domain-rt.id/verify-surat/{hash}` untuk membuktikan keaslian surat tanpa bisa dimanipulasi warga. | SHA-256 Token Digital Signature & Public Verification View. | ✅ Selesai |
+| **Audit Trail & Jejak Aktivitas** | Halaman dedicated perekaman riwayat seluruh manipulasi data pengurus (tambah/edit/hapus warga, mutasi kas, approval surat, gateway callback) lengkap dengan filter modul, aktor, dan ekspor CSV. | Dedicated Audit Log View (`AuditLogView.jsx`) + CSV Exporter + Live Event Tracking. | ✅ Selesai |
 
 ---
 

@@ -9,15 +9,21 @@ import SuratView from './components/views/SuratView';
 import SettingsView from './components/views/SettingsView';
 import InformasiView from './components/views/InformasiView';
 import WargaPortalView from './components/views/WargaPortalView';
+import AuditLogView from './components/views/AuditLogView';
 import LoginPage from './components/auth/LoginPage';
 import SuratPrintModal from './components/modals/SuratPrintModal';
+import PublicSuratVerifyView from './components/views/PublicSuratVerifyView';
 import { INITIAL_CITIZENS, INITIAL_SURAT, INITIAL_TRANSACTIONS, INITIAL_USERS, INITIAL_ANNOUNCEMENTS, INITIAL_TRANSFER_VERIFICATIONS } from './data/mockData';
+import { INITIAL_AUDIT_LOGS } from './data/auditLogData';
 import api from './services/api';
 import './index.css';
 
 export default function App() {
   // User Authentication State
   const [currentUser, setCurrentUser] = useState(null); // null = tampil halaman login
+
+  // Public QR Code Surat Verification Token
+  const [publicVerifyToken, setPublicVerifyToken] = useState(null);
 
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [activeMenu, setActiveMenu] = useState('dashboard');
@@ -30,8 +36,26 @@ export default function App() {
   const [users, setUsers] = useState(INITIAL_USERS);
   const [announcements, setAnnouncements] = useState(INITIAL_ANNOUNCEMENTS);
   const [transferVerifications, setTransferVerifications] = useState(INITIAL_TRANSFER_VERIFICATIONS);
+  const [auditLogs, setAuditLogs] = useState(INITIAL_AUDIT_LOGS);
   const [currentUserRole, setCurrentUserRole] = useState('Ketua RT');
   const [isBackendConnected, setIsBackendConnected] = useState(false);
+
+  // Check URL query parameters for public QR verification link (?verify=TOKEN or /verifikasi-surat/TOKEN)
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const verifyParam = params.get('verify');
+    if (verifyParam) {
+      setPublicVerifyToken(verifyParam);
+    } else {
+      const path = window.location.pathname;
+      if (path.includes('/verifikasi-surat/')) {
+        const parts = path.split('/verifikasi-surat/');
+        if (parts[1]) {
+          setPublicVerifyToken(parts[1]);
+        }
+      }
+    }
+  }, []);
 
   // Sinkronisasi data awal dari PostgreSQL backend REST API
   const refreshData = async () => {
@@ -94,6 +118,7 @@ export default function App() {
   // Modals
   const [selectedSuratForPrint, setSelectedSuratForPrint] = useState(null);
   const [isAddCitizenModalOpen, setIsAddCitizenModalOpen] = useState(false);
+  const [editingCitizen, setEditingCitizen] = useState(null);
 
   // Navigation title mapper
   const getPageTitle = () => {
@@ -110,9 +135,32 @@ export default function App() {
         return 'PAPAN INFORMASI & AGENDA RT';
       case 'settings':
         return 'MANAJEMEN PENGGUNA';
+      case 'audit':
+        return 'AUDIT TRAIL & LOG AKTIVITAS';
       default:
         return 'DASHBOARD';
     }
+  };
+
+  // Global Activity Audit Logger
+  const addAuditLog = (actionType, module, description, target, details = null) => {
+    const newLog = {
+      id: `LOG-2026-${String(Date.now()).slice(-4)}`,
+      timestamp: new Date().toISOString(),
+      formattedTime: new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' }) + ' WIB',
+      relativeTime: 'Baru saja',
+      actorName: currentUser?.name || (currentUserRole === 'Ketua RT' ? 'H. Bambang' : currentUserRole === 'Sekretaris' ? 'Ahmad Fauzi' : currentUserRole === 'Bendahara' ? 'Hj. Endang' : 'Warga RT 007'),
+      actorRole: currentUserRole,
+      actionType,
+      module,
+      description,
+      target,
+      ipAddress: '192.168.1.15',
+      device: 'Desktop Browser (Active Session)',
+      status: 'SUCCESS',
+      details
+    };
+    setAuditLogs(prev => [newLog, ...prev]);
   };
 
   const handleSelectMenu = (menu) => {
@@ -147,6 +195,7 @@ export default function App() {
     if (selectedSuratForPrint && selectedSuratForPrint.id === suratId) {
       setSelectedSuratForPrint(prev => ({ ...prev, status: 'Disetujui', catatanPenolakan: undefined }));
     }
+    addAuditLog('APPROVE', 'Permohonan Surat', 'Menyetujui permohonan surat pengantar & tanda tangan digital SHA-256', `Surat ${suratId}`);
     try {
       await api.surat.updateStatus(suratId, { status: 'Disetujui' });
     } catch (err) {
@@ -165,6 +214,7 @@ export default function App() {
     if (selectedSuratForPrint && selectedSuratForPrint.id === suratId) {
       setSelectedSuratForPrint(prev => ({ ...prev, status: 'Ditolak', catatanPenolakan: reason }));
     }
+    addAuditLog('REJECT', 'Permohonan Surat', `Menolak permohonan surat pengantar: ${reason}`, `Surat ${suratId}`);
     try {
       await api.surat.updateStatus(suratId, { status: 'Ditolak', catatanPenolakan: reason });
     } catch (err) {
@@ -174,6 +224,7 @@ export default function App() {
 
   const handleAddCitizen = async (newCitizen) => {
     setCitizens(prev => [newCitizen, ...prev]);
+    addAuditLog('CREATE', 'Data Warga', `Mendaftarkan data warga baru: ${newCitizen.nama}`, `NIK ${newCitizen.nik}`);
     try {
       const res = await api.citizens.create(newCitizen);
       if (res?.data) {
@@ -184,9 +235,24 @@ export default function App() {
     }
   };
 
+  const handleUpdateCitizen = async (updatedCitizen) => {
+    setCitizens(prev => prev.map(c => c.id === updatedCitizen.id ? updatedCitizen : c));
+    addAuditLog('UPDATE', 'Data Warga', `Memperbarui data kependudukan warga: ${updatedCitizen.nama}`, `NIK ${updatedCitizen.nik}`);
+    try {
+      const res = await api.citizens.update(updatedCitizen.id, updatedCitizen);
+      if (res?.data) {
+        setCitizens(prev => prev.map(c => c.id === updatedCitizen.id ? res.data : c));
+      }
+    } catch (err) {
+      console.warn('API error updating citizen:', err);
+    }
+  };
+
   const handleDeleteCitizen = async (citizenId) => {
     if (window.confirm('Yakin ingin menghapus data warga ini?')) {
+      const targetCit = citizens.find(c => c.id === citizenId);
       setCitizens(prev => prev.filter(c => c.id !== citizenId));
+      addAuditLog('DELETE', 'Data Warga', `Menghapus data kependudukan warga: ${targetCit?.nama || citizenId}`, `Warga ID ${citizenId}`);
       try {
         await api.citizens.delete(citizenId);
       } catch (err) {
@@ -197,6 +263,7 @@ export default function App() {
 
   const handleAddTransaction = async (newTrx) => {
     setTransactions(prev => [newTrx, ...prev]);
+    addAuditLog('CREATE', 'Keuangan & Kas', `Mencatat mutasi kas baru (${newTrx.kategori}): ${newTrx.sumber}`, `${newTrx.id} (Rp ${Number(newTrx.nominal || 0).toLocaleString('id-ID')})`);
     try {
       await api.transactions.create(newTrx);
     } catch (err) {
@@ -205,15 +272,18 @@ export default function App() {
   };
 
   const handleToggleIuran = async (citizenId) => {
+    const citizen = citizens.find(c => c.id === citizenId);
+    const newStatus = citizen?.statusIuran === 'Lunas' ? 'Menunggak' : 'Lunas';
     setCitizens(prev => prev.map(c => {
       if (c.id === citizenId) {
         return {
           ...c,
-          statusIuran: c.statusIuran === 'Lunas' ? 'Menunggak' : 'Lunas'
+          statusIuran: newStatus
         };
       }
       return c;
     }));
+    addAuditLog('UPDATE', 'Keuangan & Kas', `Mengubah status iuran ${citizen?.nama || ''} menjadi ${newStatus}`, `Warga ID ${citizenId}`);
     try {
       await api.citizens.toggleIuran(citizenId);
     } catch (err) {
@@ -383,6 +453,14 @@ export default function App() {
       };
       setTransactions(prev => [newTrx, ...prev]);
 
+      addAuditLog(
+        'APPROVE', 
+        'Keuangan & Kas', 
+        `Verifikasi pembayaran transfer iuran warga ${verifiedItem.namaWarga} (${verifiedItem.periode}) ke kas RT`, 
+        `Transfer ${verificationId} (Rp ${Number(verifiedItem.nominal || 0).toLocaleString('id-ID')})`,
+        { metode: verifiedItem.metode, noRef: verifiedItem.noReferensi }
+      );
+
       try {
         await api.transfers.verify(verificationId, {
           status: 'Terverifikasi',
@@ -406,6 +484,14 @@ export default function App() {
       }
       return item;
     }));
+
+    addAuditLog(
+      'REJECT', 
+      'Keuangan & Kas', 
+      `Menolak bukti pembayaran transfer warga. Catatan: ${reason}`, 
+      `Transfer ${verificationId}`
+    );
+
     try {
       await api.transfers.verify(verificationId, {
         status: 'Ditolak',
@@ -460,6 +546,21 @@ export default function App() {
     setCurrentUser(null);
   };
 
+  // Jika sedang membuka tautan verifikasi keaslian surat publik (dari scan QR code HP)
+  if (publicVerifyToken) {
+    return (
+      <PublicSuratVerifyView 
+        token={publicVerifyToken} 
+        onBack={() => {
+          setPublicVerifyToken(null);
+          const url = new URL(window.location.href);
+          url.searchParams.delete('verify');
+          window.history.replaceState({}, '', url.pathname || '/');
+        }} 
+      />
+    );
+  }
+
   // Jika belum login, tampilkan Halaman Login
   if (!currentUser) {
     return (
@@ -493,6 +594,7 @@ export default function App() {
             onClose={() => setSelectedSuratForPrint(null)}
             onApprove={handleApproveSurat}
             onReject={handleRejectSurat}
+            onOpenVerify={(token) => setPublicVerifyToken(token)}
           />
         )}
       </>
@@ -544,7 +646,14 @@ export default function App() {
               citizens={citizens}
               activeSubMenu={activeSubMenu}
               onSelectSubMenu={handleSelectSubMenu}
-              onOpenAddModal={() => setIsAddCitizenModalOpen(true)}
+              onOpenAddModal={() => {
+                setEditingCitizen(null);
+                setIsAddCitizenModalOpen(true);
+              }}
+              onEditCitizen={(citizen) => {
+                setEditingCitizen(citizen);
+                setIsAddCitizenModalOpen(true);
+              }}
               onDeleteCitizen={handleDeleteCitizen}
             />
           )}
@@ -574,6 +683,7 @@ export default function App() {
               onRejectSurat={handleRejectSurat}
               onAddSurat={handleAddSurat}
               currentUserRole={currentUserRole}
+              onOpenVerify={(token) => setPublicVerifyToken(token)}
             />
           )}
 
@@ -598,6 +708,13 @@ export default function App() {
               onDeleteUser={handleDeleteUser}
             />
           )}
+
+          {activeMenu === 'audit' && currentUserRole !== 'Warga' && (
+            <AuditLogView 
+              logs={auditLogs}
+              currentUserRole={currentUserRole}
+            />
+          )}
         </div>
 
         {/* Footer (matches wireframe footer bar) */}
@@ -611,14 +728,19 @@ export default function App() {
           onClose={() => setSelectedSuratForPrint(null)}
           onApprove={handleApproveSurat}
           onReject={handleRejectSurat}
+          onOpenVerify={(token) => setPublicVerifyToken(token)}
         />
       )}
 
       {isAddCitizenModalOpen && (
         <TambahWargaModal 
           isOpen={isAddCitizenModalOpen}
-          onClose={() => setIsAddCitizenModalOpen(false)}
-          onSave={handleAddCitizen}
+          citizenToEdit={editingCitizen}
+          onClose={() => {
+            setIsAddCitizenModalOpen(false);
+            setEditingCitizen(null);
+          }}
+          onSave={editingCitizen ? handleUpdateCitizen : handleAddCitizen}
         />
       )}
     </div>
