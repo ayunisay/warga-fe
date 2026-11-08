@@ -1,69 +1,175 @@
 # 🏘️ SAPA WARGA 07 (SI-WARGA 07)
-### Sistem Informasi & Pelayanan Administrasi Warga RT 007 / RW 030
+### Sistem Informasi & Pelayanan Administrasi Digital Warga RT 007 / RW 030
 **Kelurahan Teluk Pucung, Kecamatan Bekasi Utara, Kota Bekasi**
 
 ---
 
+<p align="center">
+  <img src="https://img.shields.io/badge/React-19.2.8-61DAFB?style=for-the-badge&logo=react&logoColor=black" alt="React 19" />
+  <img src="https://img.shields.io/badge/Vite-8.3.0-646CFF?style=for-the-badge&logo=vite&logoColor=white" alt="Vite" />
+  <img src="https://img.shields.io/badge/REST_API-Laravel_Sanctum-FF2D20?style=for-the-badge&logo=laravel&logoColor=white" alt="Backend REST" />
+  <img src="https://img.shields.io/badge/Database-PostgreSQL-4169E1?style=for-the-badge&logo=postgresql&logoColor=white" alt="PostgreSQL" />
+  <img src="https://img.shields.io/badge/Compliance-UU_PDP_No.27/2022-059669?style=for-the-badge&logo=shield&logoColor=white" alt="UU PDP Compliance" />
+  <img src="https://img.shields.io/badge/Icons-Lucide_React-F97316?style=for-the-badge&logo=lucide&logoColor=white" alt="Lucide" />
+  <img src="https://img.shields.io/badge/Linter-Oxlint-blueviolet?style=for-the-badge" alt="Oxlint" />
+  <img src="https://img.shields.io/badge/License-Proprietary-gray?style=for-the-badge" alt="License" />
+</p>
+
+---
+
+## 📖 Daftar Isi
+1. [Tentang Aplikasi](#-tentang-aplikasi)
+2. [Fitur Unggulan](#-fitur-unggulan)
+3. [Arsitektur Sistem & Alur Aliran Data](#-arsitektur-sistem--alur-aliran-data)
+4. [Matriks Peran & Hak Akses (Role-Based Access)](#-matriks-peran--hak-akses-role-based-access)
+5. [Keamanan & Kepatuhan Regulasi (UU PDP)](#-keamanan--kepatuhan-regulasi-uu-pdp)
+6. [Struktur Direktori Proyek](#-struktur-direktori-proyek)
+7. [Panduan Instalasi & Menjalankan Aplikasi](#-panduan-instalasi--menjalankan-aplikasi)
+8. [Akun Uji Coba Cepat (Demo Credentials)](#-akun-uji-coba-cepat-demo-credentials)
+9. [Integrasi Layanan & Spesifikasi API](#-integrasi-layanan--spesifikasi-api)
+10. [Fitur Ekspor & Pelaporan Data](#-fitur-ekspor--pelaporan-data)
+11. [Kontak & Dukungan Lingkungan](#-kontak--dukungan-lingkungan)
+
+---
+
 ## 📌 Tentang Aplikasi
-**SAPA WARGA 07** adalah platform web modern untuk digitalisasi pelayanan administrasi warga dan tata kelola rukun tetangga. Aplikasi ini dirancang untuk mempermudah warga dalam mengurus surat pengantar dan membayar iuran warga, sekaligus membantu jajaran pengurus RT (Ketua RT, Sekretaris, dan Bendahara) dalam mengelola data kependudukan, pembukuan kas, serta publikasi papan informasi.
+
+**SAPA WARGA 07** adalah platform web modern untuk digitalisasi pelayanan administrasi warga, transparansi tata kelola kas rukun tetangga, dan otomasi pengurusan surat pengantar di lingkungan **RT 007 / RW 030 Kelurahan Teluk Pucung, Kecamatan Bekasi Utara**.
+
+Aplikasi ini mengadopsi arsitektur **Dual-Mode** yang fleksibel:
+1. **Mode Terhubung (Live REST API)**: Terhubung langsung ke backend server Laravel 10 (`warga-be`) dengan basis data relasional PostgreSQL dan autentikasi Laravel Sanctum Bearer token.
+2. **Mode Cadangan Mandiri (Offline Mock Fallback)**: Mampu berjalan secara mandiri tanpa backend server dengan dataset simulasi kependudukan yang realistis, memudahkan demonstrasi (*showcase*) dan pengujian antarmuka tanpa dependensi server aktif.
 
 ---
 
-## 🚀 Fitur Utama Berdasarkan Peran (Role-Based Access)
+## 🚀 Fitur Unggulan
 
-### 👨‍💼 1. Panel Pengurus RT
-Sistem dilengkapi pembagian hak akses sesuai tupoksi kepengurusan:
+### 1. 📜 Pelayanan Surat Pengantar Digital & Validasi QR Code SHA-256
+- **Pengajuan Mandiri 24/7**: Warga dapat mengajukan berbagai jenis surat pengantar (SKCK, Pembuatan/Perpanjangan KTP, Surat Keterangan Domisili, Surat Keterangan Usaha/UMKM, Pengantar Nikah, SKTM, dsb.).
+- **Persetujuan & Penolakan Transparan**: Pengurus dapat menyetujui surat dalam satu klik atau menolak dengan catatan alasan perbaikan yang langsung muncul pada portal warga dengan opsi *Perbaiki & Ajukan Ulang*.
+- **Cetak Surat Berformat Resmi**: Layout cetak standar pemerintah tingkat RT lengkap dengan kop surat resmi, stempel digital, dan tanda tangan Ketua RT.
+- **Verifikasi Publik Keaslian Surat via QR Code**: Setiap surat pengantar yang disetujui dilengkapi QR Code unik berbasis hash token SHA-256. Pihak kelurahan, kepolisian, atau instansi terkait dapat memindai QR Code tersebut untuk membuka laman verifikasi resmi tanpa risiko manipulasi dokumen.
 
-- **Ketua RT & Sekretaris RT**:
-  - 📊 **Dashboard Eksekutif**: Statistik penduduk, ringkasan kas RT, pengajuan surat aktif, dan status iuran warga.
-  - 👥 **Data Kependudukan**: Pengelolaan data master penduduk, warga berdomisili/sementara, dan pencatatan mutasi (kelahiran, kematian, pindah/datang).
-  - 📜 **Persetujuan & Penolakan Surat**:
-    - **Persetujuan Digital**: Tinjauan permohonan surat warga, pengesahan digital, dan cetak surat resmi berstempel & QR code.
-    - **Catatan Penolakan Surat**: Pengurus dapat menolak permohonan surat dengan mencantumkan alasan/catatan perbaikan (dengan template cepat & input bebas) yang langsung terbaca oleh warga.
-  - 📢 **Papan Informasi RT**: Mengelola pengumuman dan agenda kegiatan warga dengan tombol aktifasi status serta *live preview*.
-  - ⚙️ **Manajemen Pengguna**: Pengaturan akun dan peranan pengurus.
-  - 🔒 **Pembatasan Hak Akses Keuangan**: *Ketua RT dan Sekretaris RT **tidak diberi akses** untuk memverifikasi pembayaran/bukti transfer warga demi menegakkan prinsip pemisahan wewenang (segregation of duties).*
+### 2. 💳 Ekosistem Pembayaran Iuran Modern (Multi-Channel)
+- **Transfer Bank Langsung & Upload Bukti**: Transfer ke rekening kas RT (BCA & Bank Mandiri) dengan unggah struk m-banking/ATM.
+- **Verifikasi Bukti Transfer Eksklusif Bendahara**: Fitur modal pemeriksaan struk digital resolusi tinggi, tombol verifikasi instan yang langsung membukukan kas masuk, serta tombol tolak bukti transfer dengan catatan alasan.
+- **Payment Gateway Otomatis (Midtrans / Tripay)**: Dukungan Dynamic QRIS (GoPay, OVO, Dana, ShopeePay, LinkAja, BCA, Mandiri) dan Virtual Account dengan webhook callback instan.
+- **Setor Tunai Terjadwal via WhatsApp**: Warga yang memilih pembayaran tunai langsung ke rumah Bendahara RT dapat mengirim pesan konfirmasi WhatsApp yang digenerate otomatis.
+- **Kuitansi Digital Otomatis**: Bukti pembayaran resmi terbit secara otomatis dan dapat diunduh/dicetak oleh warga kapan saja.
 
-- **Bendahara RT**:
-  - 💰 **Keuangan & Kas RT**: Pencatatan transaksi pemasukan dan pengeluaran kas operasional serta rekapitulasi buku kas.
-  - 🔍 **Verifikasi Bukti Transfer Warga (Eksklusif Bendahara RT)**:
-    - *Hak akses eksklusif:* Hanya Bendahara RT yang berwenang memeriksa dan memverifikasi bukti transfer pembayaran warga.
-    - Memeriksa unggahan struk transfer m-banking / QRIS warga secara detail melalui modal struk digital resmi.
-    - Tombol **Verifikasi & Terima** (otomatis menandai iuran warga lunas dan mencatat kas masuk RT).
-    - Tombol **Tolak Bukti Transfer** lengkap dengan catatan alasan penolakan ke warga.
-  - 💳 **Pencatatan Iuran Warga**: Monitor status pembayaran iuran warga per bulan, konfirmasi setoran tunai atau pembayaran online.
-  - *(Catatan: Akses pengajuan surat disembunyikan untuk menjaga fokus pada akuntansi & kas).*
+### 3. 👥 Manajemen Kependudukan & Pelindungan Data Pribadi (UU PDP No. 27/2022)
+- **Data Master Penduduk & Mutasi**: Pencatatan warga tetap, domisili/kontrak, mutasi lahir, wafat, pindah, dan datang.
+- **Data Masking Otomatis**: Sensor privasi otomatis untuk NIK (`327501******0001`), No. KK, dan No. HP pada tampilan antarmuka.
+- **Role-Based Reveal**: Tombol toggle untuk membuka sensor identitas hanya bagi pengurus yang berwenang.
 
----
+### 4. 💰 Pembukuan Kas & Akuntabilitas Finansial
+- **Buku Kas Operasional RT**: Pencatatan transaksi pemasukan dan pengeluaran kas dengan kategori terstandar dan kalkulasi saldo kas *real-time*.
+- **Matriks Status Iuran Bulanan**: Monitoring riwayat iuran 12 bulan warga tahun berjalan dengan status visual *Lunas* atau *Belum Lunas*.
+- **Prinsip Segregation of Duties**: Pemisahan wewenang yang tegas di mana Ketua RT dan Sekretaris tidak memiliki akses memvalidasi bukti pembayaran demi menegakkan integritas akuntansi.
 
-### 🏡 2. Portal Mandiri Warga (`Portal Warga`)
-Akses khusus warga untuk kemudahan swalayan (*self-service*):
+### 5. 🛡️ Audit Trail & Jejak Aktivitas Komprehensif
+- **Perekaman Log Menyeluruh**: Setiap aksi penambahan/pengubahan data warga, pencatatan mutasi kas, persetujuan/penolakan surat, callback payment gateway, hingga aktivitas login tercatat lengkap beserta timestamp, IP Address, perangkat, dan aktor pelaksana.
+- **Filter Multi-Kriteria**: Penyaringan log berdasarkan modul, jenis aksi (CREATE, UPDATE, DELETE, APPROVE, REJECT, PAYMENT_CALLBACK), dan peran aktor.
 
-- 📄 **Pengajuan Surat Pengantar Online**:
-  - Pengajuan surat kapan saja (SKCK, KTP, Domisili, SKU/UMKM, Pengantar Nikah, SKTM, dsb.).
-  - Pantau progres verifikasi surat secara *real-time*.
-  - **Notifikasi Penolakan Transparan**: Jika ditolak pengurus, warga dapat membaca alasan penolakan secara jelas dan langsung memperbaiki permohonan melalui tombol *Perbaiki & Ajukan Ulang*.
-  - Pratinjau dan cetak surat pengantar resmi yang telah disetujui Ketua RT.
-
-- 💳 **Pembayaran Iuran RT Fleksibel**:
-  - **Online via Web**: Scan **QRIS Digital RT 007** (dukung GoPay, OVO, Dana, ShopeePay, BCA, Mandiri) atau Transfer Bank Kas RT (BCA & Mandiri) dengan fitur unggah bukti transfer.
-  - **Status Verifikasi Transfer**: Warga dapat memantau status verifikasi bukti transfer yang diunggah secara *live* (*Menunggu Verifikasi*, *Terverifikasi*, atau *Ditolak* lengkap dengan catatan dari Bendahara).
-  - **Offline / Setor Tunai**: Jadwalkan waktu kedatangan untuk setor langsung ke rumah Bendahara RT (Ibu Hj. Endang) dengan integrasi pesan WhatsApp otomatis.
-  - **Kuitansi Digital**: Kuitansi bukti pembayaran resmi terbit otomatis setelah konfirmasi pembayaran.
-  - **Status Tagihan Dinamis**: Matriks riwayat pembayaran per bulan tahun 2026 dengan indikator otomatis *Lunas* / *Belum Lunas*.
-
-- 📢 **Papan Informasi & Kontak Siaga**:
-  - Pengumuman kerja bakti, posyandu, pos ronda, dan agenda lingkungan.
-  - Kontak cepat darurat Ketua RT, Sekretaris, Bendahara, dan Pos Satpam 24 Jam.
+### 6. 📊 Ekspor Data Excel-Safe (CSV UTF-8 BOM)
+- Ekspor data kependudukan, buku kas ledger, matriks iuran warga, dan audit log ke format CSV dengan enkoding UTF-8 BOM.
+- Kolom angka panjang seperti NIK dan No. KK diformat dengan proteksi teks Excel (`="""..."""`) sehingga tidak rusak menjadi notasi ilmiah (`3.27501E+15`) saat dibuka di Microsoft Excel.
 
 ---
 
-## 🛠️ Teknologi yang Digunakan (Tech Stack)
+## 📐 Arsitektur Sistem & Alur Aliran Data
 
-- **Framework**: [React 19](https://react.dev/) + [Vite](https://vitejs.dev/)
-- **Icon Library**: [Lucide React](https://lucide.dev/)
-- **Styling**: Modern Vanilla CSS (Desain responsif, Palet warna elegan, Sticky footer layout)
-- **State Management**: React Hooks (`useState`, `useEffect`) dengan Mock Dataset kependudukan realistik RT 007 Teluk Pucung
+```mermaid
+graph TD
+    subgraph Pengguna ["👥 Pengguna Sistem"]
+        W["👤 Warga RT 007"]
+        K["👑 Ketua RT"]
+        S["✍️ Sekretaris"]
+        B["💰 Bendahara"]
+        PUB["🏛️ Instansi Publik / Kelurahan"]
+    end
+
+    subgraph FrontendSPA ["💻 SAPA WARGA 07 (React 19 + Vite Frontend)"]
+        AUTH_FE["Autentikasi & Selektor Peran"]
+        PORTAL_W["Portal Mandiri Warga"]
+        DASH_ADM["Dashboard Pengurus"]
+        WARGA_ADM["Manajemen Data Warga (UU PDP Masking)"]
+        SURAT_ADM["Persetujuan Surat + Stempel QR SHA-256"]
+        KEU_ADM["Kas RT & Verifikasi Transfer Bendahara"]
+        AUDIT_ADM["Audit Trail & Ekspor Data Excel-Safe"]
+        VERIF_PUB["Laman Publik Verifikasi Surat QR"]
+        API_SVC["src/services/api.js (REST Client)"]
+        MOCK_FB["src/data/mockData.js (Fallback Offline)"]
+    end
+
+    subgraph BackendAPI ["⚙️ Backend REST API (Laravel 10 Sanctum)"]
+        SANCTUM["Bearer Token Authentication"]
+        CTRL_WARGA["Citizens Controller"]
+        CTRL_SURAT["Surat & Digital Signature Controller"]
+        CTRL_KAS["Finance & Transfer Verification Controller"]
+        CTRL_PAY["Payment Gateway Webhook Controller"]
+        CTRL_LOG["Audit Trail Controller"]
+    end
+
+    subgraph EksternalLayanan ["🌐 Layanan Eksternal & Basis Data"]
+        GATEWAY["Midtrans / Tripay (Dynamic QRIS & VA)"]
+        DB[(🐘 PostgreSQL Database)]
+    end
+
+    W -->|Ajukan Surat & Bayar Iuran| PORTAL_W
+    K -->|Monitoring & Pengesahan Surat| DASH_ADM & SURAT_ADM & AUDIT_ADM
+    S -->|Olah Data Warga & Surat| WARGA_ADM & SURAT_ADM
+    B -->|Verifikasi Transfer & Buku Kas| KEU_ADM
+    PUB -->|Pindai QR Code Dokumen| VERIF_PUB
+
+    PORTAL_W & DASH_ADM & WARGA_ADM & SURAT_ADM & KEU_ADM & AUDIT_ADM & VERIF_PUB --> API_SVC
+    API_SVC -.->|Jika Server Offline| MOCK_FB
+    API_SVC ==>|HTTP Bearer Requests| SANCTUM
+
+    SANCTUM --> CTRL_WARGA & CTRL_SURAT & CTRL_KAS & CTRL_PAY & CTRL_LOG
+    CTRL_PAY <==>|Webhook Callback| GATEWAY
+    CTRL_WARGA & CTRL_SURAT & CTRL_KAS & CTRL_LOG ==> DB
+```
+
+---
+
+## 👥 Matriks Peran & Hak Akses (Role-Based Access)
+
+| Modul & Fungsionalitas | 👑 Ketua RT | ✍️ Sekretaris | 💰 Bendahara | 👤 Warga RT |
+| :--- | :---: | :---: | :---: | :---: |
+| **Dashboard Statistik & Ringkasan RT** | ✅ | ✅ | ✅ | ❌ |
+| **Kelola Master Kependudukan & Mutasi** | ✅ | ✅ | ❌ | ❌ |
+| **Masking / Unmasking Data Sensitif UU PDP** | ✅ | ✅ | ❌ | ❌ |
+| **Persetujuan & Penolakan Surat Pengantar** | ✅ *(Pengesah)* | ✅ *(Reviewer)* | ❌ *(Dibatasi)* | ❌ |
+| **Pengajuan Surat Pengantar Mandiri** | ❌ | ❌ | ❌ | ✅ |
+| **Pencatatan Pemasukan & Pengeluaran Kas** | ❌ *(View Only)* | ❌ *(View Only)* | ✅ *(Full Akses)* | ❌ |
+| **Verifikasi Struk Transfer Pembayaran Warga** | ❌ *(Segregation)* | ❌ *(Segregation)* | ✅ *(Eksklusif)* | ❌ |
+| **Pembayaran Iuran (QRIS / Transfer / Tunai)** | ❌ | ❌ | ❌ | ✅ |
+| **Manajemen Pengumuman & Agenda Lingkungan** | ✅ | ✅ | ❌ | ❌ *(View Only)* |
+| **Manajemen Pengguna & Akun Pengurus** | ✅ | ❌ | ❌ | ❌ |
+| **Audit Trail & Ekspor Seluruh Laporan CSV** | ✅ | ✅ | ✅ *(Kas Only)* | ❌ |
+| **Verifikasi Keaslian Surat via QR Code** | ✅ | ✅ | ✅ | ✅ *(Publik)* |
+
+> [!NOTE]
+> **Prinsip Segregation of Duties (Pemisahan Wewenang Keuangan):**
+> Ketua RT dan Sekretaris secara arsitektural tidak diberi akses memverifikasi bukti transfer atau mengubah saldo kas. Hak tersebut secara eksklusif didelegasikan kepada Bendahara RT untuk menjamin akuntabilitas serta mencegah konflik kepentingan dalam pengelolaan dana warga.
+
+---
+
+## 🔒 Keamanan & Kepatuhan Regulasi (UU PDP)
+
+SAPA WARGA 07 dirancang dengan kepatuhan terhadap **Undang-Undang Republik Indonesia Nomor 27 Tahun 2022 tentang Pelindungan Data Pribadi (UU PDP)**:
+
+1. **Penerapan *Privacy-by-Default* (Data Masking)**:
+   - Data kependudukan berupa NIK, No. Kartu Keluarga, dan Nomor Handphone warga secara otomatis disensor pada antarmuka publik dan tabel operasional pengurus.
+   - Pola sensor: NIK `327501******0001` (hanya menampilkan 6 digit kode wilayah dan 4 digit unik akhir).
+2. **Integritas Dokumen Digital (SHA-256 Cryptographic Hash)**:
+   - Setiap surat pengantar yang diterbitkan memuat token verifikasi kriptografi 32-karakter unik.
+   - Pihak pemeriksa dokumen dapat mengakses route verifikasi publik `?verify={token}` atau `/verifikasi-surat/{token}` untuk mencocokkan data fisik dengan arsip asli digital.
+3. **Ekspor Data Terlindungi dari *CSV Injection* / *Scientific Corruption***:
+   - Angka NIK dan No. KK berpanjang 16 digit dibungkus dengan formula teks aman agar tidak berubah menjadi format notasi eksponensial di aplikasi spreadsheet.
+4. **Keamanan Autentikasi**:
+   - Mendukung standar Bearer Token HTTP Authorization header dengan penyimpanan aman di sisi klien.
 
 ---
 
@@ -72,136 +178,194 @@ Akses khusus warga untuk kemudahan swalayan (*self-service*):
 ```plaintext
 warga-fe/
 ├── public/
-│   └── vite.svg
+│   └── vite.svg                      # Favicon aplikasi
 ├── src/
-│   ├── assets/              # Aset statis & logo
+│   ├── assets/
+│   │   ├── hero.png                  # Ilustrasi visual header portal warga
+│   │   ├── react.svg
+│   │   └── vite.svg
 │   ├── components/
 │   │   ├── auth/
-│   │   │   └── LoginPage.jsx        # Halaman autentikasi & pilih peran demo
+│   │   │   └── LoginPage.jsx         # Halaman login dual-tab (Pengurus & Warga) + Demo fast login
 │   │   ├── modals/
-│   │   │   ├── SuratPrintModal.jsx  # Modal pratinjau & cetak surat berformat resmi
-│   │   │   └── TambahWargaModal.jsx # Form tambah data kependudukan baru
+│   │   │   ├── SuratPrintModal.jsx   # Pratinjau surat resmi siap cetak + kop RT & QR Code
+│   │   │   └── TambahWargaModal.jsx  # Form modal tambah/edit warga (validasi NIK & KK)
 │   │   ├── views/
-│   │   │   ├── DashboardView.jsx    # Ringkasan analitik pengurus
-│   │   │   ├── DataWargaView.jsx    # Tabel kependudukan & mutasi
-│   │   │   ├── InformasiView.jsx    # Manajemen papan pengumuman
-│   │   │   ├── KeuanganView.jsx     # Buku kas & rekonsiliasi iuran
-│   │   │   ├── SettingsView.jsx     # Pengaturan hak akses pengguna
-│   │   │   ├── SuratView.jsx        # Pengelolaan arsip permohonan surat
-│   │   │   └── WargaPortalView.jsx  # Portal dashboard mandiri warga
-│   │   ├── Footer.jsx       # Komponen footer aplikasi
-│   │   ├── Header.jsx       # Header bar pengurus dengan avatar & tombol keluar
-│   │   └── SidebarDrawer.jsx# Drawer navigasi pengurus
+│   │   │   ├── AuditLogView.jsx      # Panel audit trail jejak aktivitas pengurus & sistem
+│   │   │   ├── DashboardView.jsx     # Visualisasi KPI kependudukan, iuran & kas
+│   │   │   ├── DataWargaView.jsx     # Tabel master warga, mutasi & filter kependudukan
+│   │   │   ├── InformasiView.jsx     # Manajemen pengumuman & agenda kegiatan warga
+│   │   │   ├── KeuanganView.jsx      # Buku kas operasional, verifikasi transfer & iuran
+│   │   │   ├── PublicSuratVerifyView.jsx # Halaman publik pembuktian keabsahan surat via QR
+│   │   │   ├── SettingsView.jsx      # Pengaturan akun pengurus & profil lingkungan RT
+│   │   │   ├── SuratView.jsx         # Arsip pengajuan surat, persetujuan & form alasan penolakan
+│   │   │   └── WargaPortalView.jsx   # Portal mandiri warga: pengajuan surat & pembayaran iuran
+│   │   ├── Footer.jsx                # Komponen footer aplikasi & kontak darurat
+│   │   ├── Header.jsx                # Header bar, indikator koneksi backend & profil aktif
+│   │   └── SidebarDrawer.jsx         # Navigasi sidebar responsif pengurus
 │   ├── data/
-│   │   └── mockData.js      # Data awal warga, kas, surat, dan pengumuman
-│   ├── App.jsx              # Komponen utama & router logika peran
-│   ├── index.css            # Styling sistem, utility class, dan layout
-│   └── main.jsx             # Entry point React
-├── index.html
-├── package.json
-├── vite.config.js
-└── README.md
+│   │   ├── auditLogData.js           # Dataset riwayat audit trail awal
+│   │   └── mockData.js               # Master mock dataset (penduduk, transaksi kas, surat, user)
+│   ├── services/
+│   │   └── api.js                    # HTTP Client REST API Laravel terpusat
+│   ├── utils/
+│   │   ├── exportUtils.js            # Generator ekspor CSV dengan UTF-8 BOM & Text Formula
+│   │   └── privacyUtils.js           # Utilitas masking NIK, KK, dan No. HP sesuai UU PDP
+│   ├── App.css
+│   ├── App.jsx                       # Komponen root, router state & auto sync backend
+│   ├── index.css                     # Desain sistem responsif, variabel tema & print style
+│   └── main.jsx                      # Bootstrap aplikasi Vite React
+├── .env                              # Variabel lingkungan aktif
+├── .env.example                      # Contoh berkas konfigurasi lingkungan
+├── .gitignore
+├── .oxlintrc.json                    # Aturan linter performa Oxlint
+├── index.html                        # Root HTML & konfigurasi viewport
+├── package.json                      # Daftar dependensi & script runner
+├── README.md                         # Dokumentasi teknis proyek
+└── vite.config.js                    # Konfigurasi bundler Vite
 ```
 
 ---
 
-## ⚡ Panduan Menjalankan Aplikasi
+## ⚡ Panduan Instalasi & Menjalankan Aplikasi
 
-### 1. Klon Repositori
+### 1. Prasyarat Sistem
+- **Node.js**: Versi `18.x` atau yang lebih baru (disarankan `Node.js 20 LTS`).
+- **NPM** atau **Yarn / PNPM / Bun**.
+- **Peramban Web Modern**: Google Chrome, Mozilla Firefox, Microsoft Edge, atau Safari versi terbaru.
+
+### 2. Klon Repositori
 ```bash
 git clone https://github.com/ayunisay/warga-fe.git
 cd warga-fe
 ```
 
-### 2. Pasang Dependensi
+### 3. Pasang Seluruh Dependensi
 ```bash
 npm install
 ```
 
-### 3. Jalankan Server Pengembangan
+### 4. Konfigurasi Variabel Lingkungan (`.env`)
+Salin berkas `.env.example` menjadi `.env`:
+```bash
+cp .env.example .env
+```
+Isi konfigurasi endpoint backend API Anda:
+```env
+# Alamat Backend REST API (Laravel 10 warga-be)
+VITE_API_URL=http://127.0.0.1:8001/api
+```
+
+> [!TIP]
+> **Mode Tanpa Backend (Offline Showcase):**
+> Jika backend `warga-be` belum dijalankan, Anda tetap dapat menjalankan aplikasi frontend secara langsung. Sistem secara otomatis mendeteksi ketiadaan server dan menggunakan dataset tiruan (*mock data*) tanpa memunculkan layar putih atau crash.
+
+### 5. Jalankan Server Pengembangan (Development Server)
 ```bash
 npm run dev
 ```
-Buka browser dan akses alamat yang tertera (biasanya `http://localhost:5173/`).
+Setelah server berjalan, buka peramban dan akses alamat yang tertera pada konsol terminal:
+```text
+  VITE v8.3.0  ready in 240 ms
 
-### 4. Build untuk Produksi
+  ➜  Local:   http://localhost:5173/
+  ➜  Network: use --host to expose
+```
+
+### 6. Menjalankan Pengecekan Kode (Linting)
+Proyek ini menggunakan **Oxlint** untuk pengecekan kode berkecepatan tinggi:
+```bash
+npm run lint
+```
+
+### 7. Membangun Berkas Produksi (Production Build)
+Untuk melakukan kompilasi berkas yang dioptimalkan sebelum deploy:
 ```bash
 npm run build
+```
+Hasil kompilasi akan tersimpan di dalam direktori `dist/`. Anda dapat mengujinya secara lokal dengan perintah:
+```bash
+npm run preview
 ```
 
 ---
 
-## ⚠️ Status Data & Keterbatasan Frontend Saat Ini
+## 🔑 Akun Uji Coba Cepat (Demo Credentials)
 
-> [!IMPORTANT]
-> **PEMBERITAHUAN DATA DUMMY / MOCK DATA:**
-> Seluruh data yang ditampilkan di dalam aplikasi frontend ini (data master penduduk, NIK, No. KK, mutasi kas RT, arsip surat pengantar, pengumuman, dan riwayat transfer iuran) **100% masih menggunakan data tiruan statis (*mock data*)** yang didefinisikan pada berkas [`src/data/mockData.js`](file:///c:/laragon/www/warga-fe/src/data/mockData.js). Aplikasi ini **belum terhubung ke backend API maupun basis data (database) riil**.
+Halaman login dilengkapi tombol **Demo Fast Login** untuk beralih peran hanya dengan satu kali klik tanpa perlu mengetik kredensial manual:
 
----
-
-### 🔍 Analisis Kekurangan Sistem Sampai Detail Terkecil
-
-Meskipun antarmuka dan interaksi pengguna telah lengkap dan teruji secara fungsional di sisi frontend, berikut adalah daftar celah kritis, keterbatasan arsitektur, dan isu keamanan yang **wajib dipahami dan diperbaiki** sebelum sistem masuk ke tahap *production*:
-
-#### 1. 🛡️ Keamanan & Privasi Data (Security & Privacy Vulnerabilities)
-- **Autentikasi Bersifat *Client-Side Only* (Palsu):**
-  - Proses login hanya memanipulasi *state* React (`currentUser`). Tidak ada token sesi rahasia (seperti JWT atau session cookie aman beratribut `HttpOnly` dan `SameSite`).
-  - Siapa pun yang membuka *DevTools Console* di browser dapat memanipulasi variabel state untuk menaikkan hak akses (*privilege escalation*) menjadi Ketua RT atau Bendahara tanpa verifikasi kredensial.
-- **Kebocoran Data Pribadi Sensitif (Pelanggaran UU PDP):**
-  - Nomor Induk Kependudukan (NIK), No. KK, nomor telepon, dan riwayat keluarga tersimpan dalam berkas JavaScript statis yang di-*bundle*. Siapa pun dapat menginspeksi kode sumber web (*View Source* / Network tab) dan melihat seluruh data warga tanpa perlu login.
-  - Belum ada mekanisme penyembunyian (*masking* data) seperti `327501******0001` untuk publik atau non-admin.
-- **Simulasi Berkas & Bukti Transfer Tanpa Sanitasi:**
-  - Unggahan struk bukti transfer saat ini hanya berupa simulasi string nama berkas (`struk_transfer_warga.jpg`).
-  - Tidak ada validasi tipe MIME biner, pemindaian virus/malware, batasan ukuran berkas (*file size limit*), maupun proteksi terhadap *malicious payload* (misalnya berkas executable `.exe` atau skrip `.php` yang disamarkan sebagai gambar).
-- **Integritas Dokumen Surat & Stempel Digital:**
-  - Stempel RT dan tanda tangan digital saat ini dirender menggunakan elemen visual CSS & HTML biasa.
-  - Dokumen pengantar sangat rentan dipalsukan karena siapa pun bisa mengubah teks nama, nomor surat, atau tanggal melalui fitur *Inspect Element* browser sebelum melakukan pencetakan PDF. Dokumen belum dibubuhi sertifikat digital kriptografi (*cryptographic digital signature* / SHA-256 hash).
-
-#### 2. 💾 Integritas & Persistensi Data (State & Data Integrity)
-- **Tidak Ada Persistensi Antar Sesi (*Volatile State*):**
-  - Perubahan data (surat yang baru diajukan, surat yang ditolak, status iuran yang diverifikasi, atau transaksi kas baru) hanya hidup di memori RAM browser. Begitu halaman di-refresh keras (*hard reload* / F5), seluruh data akan kembali ke *default mock data*.
-- **Celah *Race Condition* & Duplikasi:**
-  - Tidak ada validasi unik di tingkat database untuk mencegah 1 NIK terdaftar dua kali.
-  - Tidak ada penguncian transaksi (*transaction lock* / idempotency key) untuk mencegah anggota keluarga dalam 1 KK membayar iuran bulan yang sama secara bersamaan melalui dua gawai berbeda.
-
-#### 3. ⚡ Skalabilitas & Performa (Client Bottlenecks)
-- **Pemrosesan Data 100% di Memori Klien (*Client-side Filtering*):**
-  - Seluruh fungsi pencarian nama, filter kategori, dan kalkulasi saldo kas dilakukan di peramban pengguna.
-  - Untuk lingkup 1 RT (±100-200 KK) beban masih tergolong ringan. Namun jika sistem diperluas ke tingkat RW (puluhan RT) atau Kelurahan (ribuan warga), browser pengguna gawai berdaya rendah (*low-end smartphones*) akan mengalami *freeze* / lag akibat kehabisan memori.
-- **Absennya Paginasi Server (*Server-Side Pagination*):**
-  - Seluruh baris data warga dan mutasi keuangan dimuat sekaligus di satu waktu (*no infinite scroll / server pagination*).
+| Peran Akun | Nama Pejabat / Warga | NIK / Login | Password | Cakupan Wewenang Utama |
+| :--- | :--- | :--- | :--- | :--- |
+| **👑 Ketua RT** | H. Bambang Sugiarto, S.T. | `3275011204850001` *(atau `ketua.rt007@gmail.com`)* | `password` | Superadmin RT, Pengesahan Surat, Audit Trail, Manajemen Pengguna |
+| **✍️ Sekretaris** | Ahmad Fauzi, S.Kom. | `3275018809910008` *(atau `sekretaris.rt007@gmail.com`)* | `password` | Manajemen Data Warga, Review Permohonan Surat, Pengumuman |
+| **💰 Bendahara** | Hj. Endang Suryaningsih | `3275016703800007` *(atau `bendahara.rt007@gmail.com`)* | `password` | Pembukuan Kas, Verifikasi Bukti Transfer Warga, Rekap Iuran |
+| **👤 Warga 1 (Default)** | Andi Pratama | `3275012301900003` *(Blok B3 No. 12)* | `password` | Pengajuan Surat Pengantar, Bayar Iuran Mandiri, Kuitansi Digital |
+| **👤 Warga 2** | Siti Aminah | `3275015506920004` *(Blok A1 No. 04)* | `password` | Portal Mandiri Warga RT 007 |
+| **👤 Warga 3** | Budi Santoso | `3275011908880002` *(Blok C2 No. 08)* | `password` | Portal Mandiri Warga RT 007 |
 
 ---
 
-### 💡 Saran & Rekomendasi Tindak Lanjut (Roadmap Pengembangan Backend)
+## 🔌 Integrasi Layanan & Spesifikasi API
 
-Untuk mengubah prototipe frontend ini menjadi aplikasi siap pakai di lingkungan RT nyata, langkah-langkah berikut sangat disarankan:
+Frontend berkomunikasi dengan backend melalui modul terpadu [`src/services/api.js`](file:///c:/laragon/www/warga-fe/src/services/api.js) dengan endpoint terstandar:
 
-| Area | Tindakan yang Telah & Harus Dilakukan | Teknologi / Implementasi | Status |
-| :--- | :--- | :--- | :--- |
-| **Backend API** | RESTful API terintegrasi menangani autentikasi Sanctum, master warga, mutasi kas, approval surat, dan verifikasi transfer. | Laravel 10 (Controllers, Migrations, Seeders, API Resources). | ✅ Selesai (`warga-be`) |
-| **Database** | Basis data relasional dengan indeks relasi NIK, KK, status iuran, dan transaksi kas. | PostgreSQL (`db_warga`, port 5433). | ✅ Selesai |
-| **Autentikasi Aman** | Multi-role JWT / Bearer Token Laravel Sanctum (Ketua RT, Sekretaris, Bendahara, Warga). | Laravel Sanctum API Token. | ✅ Selesai |
-| **Perlindungan Data (UU PDP)** | Enkripsi kolom sensitif (NIK, KK) di database (*encryption at rest*), serta implementasi *data masking* pada tampilan warga. | AES-256 (CBC/HMAC Blind Index) + Frontend UI Masking. | ✅ Selesai |
-| **Penyimpanan Berkas Bukti** | Mengunggah foto bukti transfer dan scan KTP ke *Storage* lokal/cloud (storage symlink aktif). | Laravel Storage Symlink / MinIO / S3. | ✅ Selesai (Local Storage) |
-| **Payment Gateway Otomatis** | Menggantikan upload struk manual dengan integrasi payment gateway resmi agar verifikasi transfer bank dan QRIS berjalan otomatis melalui *Webhook callback*. | Midtrans / Tripay (Dynamic QRIS, Virtual Account BCA/Mandiri/BNI/BRI & Webhook Settlement). | ✅ Selesai |
-| **Verifikasi Keaslian Surat** | Menghasilkan QR code resmi pada surat pengantar yang ketika dipindai kamera HP akan membuka laman verifikasi publik backend: `https://domain-rt.id/verify-surat/{hash}` untuk membuktikan keaslian surat tanpa bisa dimanipulasi warga. | SHA-256 Token Digital Signature & Public Verification View. | ✅ Selesai |
-| **Audit Trail & Jejak Aktivitas** | Halaman dedicated perekaman riwayat seluruh manipulasi data pengurus (tambah/edit/hapus warga, mutasi kas, approval surat, gateway callback) lengkap dengan filter modul, aktor, dan ekspor CSV. | Dedicated Audit Log View (`AuditLogView.jsx`) + CSV Exporter + Live Event Tracking. | ✅ Selesai |
+| Modul | Method | Endpoint | Fungsi |
+| :--- | :---: | :--- | :--- |
+| **Autentikasi** | `POST` | `/api/login` | Login pengurus/warga & perolehan Bearer token |
+| | `POST` | `/api/logout` | Revoke token sesi pengguna |
+| | `GET` | `/api/user` | Mendapatkan data profil akun yang sedang login |
+| **Kependudukan** | `GET` | `/api/citizens` | Mengambil seluruh data penduduk dengan parameter filter |
+| | `POST` | `/api/citizens` | Menambahkan warga baru ke database |
+| | `PUT` | `/api/citizens/:id` | Memperbarui data warga |
+| | `DELETE` | `/api/citizens/:id` | Menghapus data kependudukan |
+| | `PATCH` | `/api/citizens/:id/toggle-iuran` | Memperbarui status pembayaran iuran warga |
+| **Keuangan Kas** | `GET` | `/api/transactions` | Rekapitulasi mutasi buku kas |
+| | `POST` | `/api/transactions` | Mencatat transaksi kas masuk / kas keluar baru |
+| | `GET` | `/api/transactions/summary` | Mengambil ringkasan saldo, total masuk, dan keluar |
+| **Verifikasi Transfer** | `GET` | `/api/transfers` | Mengambil antrean bukti transfer warga |
+| | `POST` | `/api/transfers/verify/:id` | Verifikasi terima atau tolak bukti transfer oleh Bendahara |
+| **Payment Gateway** | `POST` | `/api/payments/charge` | Membuat tagihan pembayaran Dynamic QRIS / VA |
+| | `GET` | `/api/payments/status/:orderId` | Memeriksa status settlement pembayaran |
+| | `POST` | `/api/payments/simulate/:orderId` | Endpoint simulasi pembayaran (Sandbox / Dev) |
+| **Surat Pengantar** | `GET` | `/api/surat` | Mengambil arsip permohonan surat warga |
+| | `POST` | `/api/surat` | Pengajuan surat pengantar baru oleh warga |
+| | `PATCH` | `/api/surat/:id/status` | Persetujuan atau penolakan surat oleh Ketua RT |
+| | `GET` | `/api/surat/verify/:token` | Endpoint verifikasi keaslian surat untuk publik |
+| **Pengumuman** | `GET` | `/api/announcements` | Mengambil daftar pengumuman & agenda kegiatan RT |
+| | `POST` | `/api/announcements` | Publikasi agenda / pengumuman baru |
+| | `DELETE` | `/api/announcements/:id` | Menghapus pengumuman |
+| **Dashboard** | `GET` | `/api/dashboard/stats` | Mengambil agregat statistik eksekutif pengurus |
 
 ---
 
-## 🔑 Akun Uji Coba Cepat (Demo Logins)
+## 📑 Fitur Ekspor & Pelaporan Data
 
-Halaman login menyediakan menu cepat (*one-click switch*) untuk menguji berbagai sudut pandang akun:
+Seluruh data transaksi dan administrasi dapat diunduh langsung dari antarmuka web melalui utilitas [`src/utils/exportUtils.js`](file:///c:/laragon/www/warga-fe/src/utils/exportUtils.js):
 
-| Peran | Nama Akun | NIK / ID | Akses Utama |
-| :--- | :--- | :--- | :--- |
-| **Ketua RT** | H. Bambang Sugiarto, S.T. | `3275011204850001` | Seluruh menu pengurus + Pengesahan surat |
-| **Sekretaris** | Ahmad Fauzi, S.Kom. | `3275018809910008` | Administrasi warga & permohonan surat |
-| **Bendahara** | Hj. Endang Suryaningsih | `3275016703800007` | Kas masuk/keluar & konfirmasi iuran |
-| **Warga** | Andi Pratama | `3275012301900003` | Portal mandiri: ajukan surat & bayar iuran |
+1. **Ekspor Data Kependudukan (`exportCitizensToCsv`)**:
+   - Menghasilkan daftar lengkap warga RT 007 dengan identitas, alamat blok/rumah, status kependudukan, dan nomor kontak.
+2. **Ekspor Buku Kas Ledger (`exportKasLedgerToCsv`)**:
+   - Menghasilkan laporan jurnal kas berkala lengkap dengan tanggal, kode referensi, sumber dana, kategori transaksi, nominal, dan saldo berjalan.
+3. **Ekspor Matriks Iuran Warga (`exportIuranToCsv`)**:
+   - Menghasilkan rekapitulasi setoran iuran per KK dari bulan Januari hingga Desember untuk keperluan rapat pertanggungjawaban RT.
+4. **Ekspor Audit Trail (`exportAuditLogsToCsv`)**:
+   - Menghasilkan log kepatuhan yang mencatat seluruh jejak audit pengurus untuk transparansi warga.
 
 ---
 
-## 📄 Lisensi
-Hak Cipta © 2026 **SAPA WARGA 07** — RT 007 / RW 030 Kelurahan Teluk Pucung. Dilindungi Undang-Undang.
+## 📞 Kontak & Dukungan Lingkungan
+
+| Layanan Lingkungan | Penanggung Jawab | Narahubung / Saluran |
+| :--- | :--- | :--- |
+| **Ketua RT 007** | Bpk. H. Bambang Sugiarto, S.T. | Jl. Teluk Pucung Raya Blok B3 / WA: 0812-3456-7890 |
+| **Sekretariat RT** | Sdr. Ahmad Fauzi, S.Kom. | Balai Warga RT 007 / WA: 0813-9876-5432 |
+| **Bendahara Kas RT** | Ibu Hj. Endang Suryaningsih | Rumah Dinas Bendahara Blok A1 / WA: 0811-2233-4455 |
+| **Pos Keamanan & Ronda** | Tim Satpam RT 007 (24 Jam) | Pos Utama Gerbang RT 007 / Emergency: (021) 8899-0077 |
+
+---
+
+<p align="center">
+  <b>Hak Cipta © 2026 SAPA WARGA 07</b><br>
+  Rukun Tetangga 007 / Rukun Warga 030, Kelurahan Teluk Pucung, Kecamatan Bekasi Utara, Kota Bekasi.<br>
+  <i>Dikembangkan untuk kemajuan, kemudahan administrasi, dan transparansi warga.</i>
+</p>
